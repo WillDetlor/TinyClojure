@@ -76,6 +76,7 @@ namespace tinyclojure {
                 break;
                 
             case kObjectTypeCons:
+                // TODO print something prettier in the case of a list
                 stringBuilder << "(cons " << pointer.consValue.left->stringRepresentation() << " " << pointer.consValue.right->stringRepresentation() << ")";
                 break;
                 
@@ -322,6 +323,9 @@ namespace tinyclojure {
                 if (parseState.currentChar()==']') {
                     // advance past the ] and end the vector
                     ++parseState.position;
+
+                    // insert the vector identifier at the beginning
+                    elements.insert(elements.begin(), _gc->registerObject(new Object("vector")));
                     
                     return listObject(elements);
                 }
