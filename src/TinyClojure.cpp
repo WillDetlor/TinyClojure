@@ -36,10 +36,16 @@ namespace tinyclojure {
             
             case kObjectTypeCons:
                 // it isn't our business deleting "unused" objects, that is for the GC
+            case kObjectTypeInteger:
             case kObjectTypeNil:
                 // nothing need be done
                 break;
         }
+    }
+    
+    Object::Object(int value) {
+        _type = kObjectTypeInteger;
+        pointer.integerValue = value;
     }
     
     Object::Object(Object *left, Object *right) {
@@ -50,6 +56,10 @@ namespace tinyclojure {
         
     std::string& Object::stringValue() {
         return *pointer.stringValue;
+    }
+    
+    int& Object::integerValue() {
+        return pointer.integerValue;
     }
     
 #pragma mark -
@@ -83,6 +93,8 @@ namespace tinyclojure {
             _excludeSet.append(&excludeChar, 1);
         }
         _excludeSet.append("\"()[]{}';` ");
+        
+        _numberSet = std::string("0123456789");
     }
     
     TinyClojure::~TinyClojure() {
@@ -403,9 +415,20 @@ namespace tinyclojure {
                     } else {
                         // standard text, ie a symbol
                         
-                        // TODO test for number
+                        // TODO test for number properly (ie decimals)
+                        bool isInteger = true;
+                        for (int identifierIndex = 0; identifierIndex < identifier.size(); ++identifierIndex) {
+                            if (_numberSet.find(identifier[identifierIndex]) != _numberSet.npos) {
+                                isInteger = false;
+                                break;
+                            }
+                        }
                         
-                        return _gc->registerObject(new Object(identifier, true));
+                        if (isInteger) {
+                            return _gc->registerObject(new Object(atoi(identifier.c_str())));
+                        } else {
+                            return _gc->registerObject(new Object(identifier, true));
+                        }
                     }
                 }            
             }

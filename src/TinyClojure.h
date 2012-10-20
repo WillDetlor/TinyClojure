@@ -25,6 +25,7 @@ namespace tinyclojure {
             kObjectTypeSymbol,
             kObjectTypeCons,
             kObjectTypeNil,
+            kObjectTypeInteger,
         } ObjectType;
         
         /// construct either a symbol (if symbol=true) or a string object otherwise
@@ -32,6 +33,9 @@ namespace tinyclojure {
         
         /// construct a nil object
         Object();
+        
+        /// construct an integer object
+        Object(int intValue);
         
         /// construct a pair
         Object(Object *left, Object *right);
@@ -44,6 +48,9 @@ namespace tinyclojure {
         /// return a reference to this object as a string value
         std::string& stringValue();
         
+        /// return a reference to this object as an integer value
+        int& integerValue();
+        
     protected:
         ObjectType _type;
         union {
@@ -51,6 +58,7 @@ namespace tinyclojure {
             struct {
                 Object *left, *right;
             } consValue;
+            int integerValue;
         } pointer;
     };
     
@@ -216,7 +224,7 @@ namespace tinyclojure {
         /// the internal recursive parser function, see parse for documentation
         Object* recursiveParse(ParserState& parseState);
         
-        std::string _newlineSet, _excludeSet;
+        std::string _newlineSet, _excludeSet, _numberSet;
     };
 }
 

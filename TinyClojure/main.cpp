@@ -12,10 +12,21 @@
 
 int main(int argc, const char * argv[]) {
     tinyclojure::TinyClojure interpreter;
-    tinyclojure::Object* code = interpreter.parse("(+ 1 2)");
-    interpreter.eval(code);
+    tinyclojure::Object* code;
     
-    delete code;
+    try {
+        code = interpreter.parse("(+ 1 2)");
+    } catch (tinyclojure::ParserError error) {
+        std::cout << error.position << ": " << error.message << std::endl;
+        return 1;
+    }
+
+    if (code) {
+        interpreter.eval(code);
+    } else {
+        std::cout << "null code\n";
+        return 1;
+    }
     
     return 0;
 }
