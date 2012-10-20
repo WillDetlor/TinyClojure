@@ -39,10 +39,17 @@ Roughly, my coding conventions are
 * Datatypes start with a capital, member variables with an underscore.
 * Indent by four spaces, no tabs.
 * No macros (C++ of course).
+* Document all interfaces with Doxygen style comments.
+* All variable and method names must be descriptive.  No one letter variables please.  Comment code when necessary, but if you can clarify the operation of your code through the method and variables names instead, that is better.
 
 Less defined principles are
 
-* Golden rule: _Small binary size, hackability, and ease of embedding will always take precedence over efficiency_
+* Order of precedence
+    * Hackability.  No extension language is at all useful unless it is easy to read, fix and extend.
+    * Small compiled size.  Add as many braces and comments as you like, but this must compile to be small
+    * Ease of embedding.  One .h, one .cpp and four lines of code should be all you need to embed this in your code.
+    * Startup speed.  In general I'm not sorried about speed, but an interpreter cannot be regarded as lightweight if takes a long time to construct and initialise.
+    * Execution speed.  I'm willing to relax the small size rule a little for large performance gains, but this interpreter is only meant for small scripts.  Execution speed just isn't that important.
 * If you want to add functionality that violates the golden rule, then as long as it can be turned on and off with an #ifdef then that is fine.
 
 

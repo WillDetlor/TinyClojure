@@ -14,14 +14,23 @@
 #include <set>
 #include <vector>
 
-namespace tinyclojure {
+namespace tinyclojure {    
     /**
      * base class for all clojure values
-     *
-     * TODO create an exportable Object* wrapper that keeps track of which root objects are still alive for the GC
      */
     class Object {
         
+    };
+    
+    /**
+     * a wrapper for Object* when exporting any object
+     *
+     * this helps the garbage collector keep track of root objects still exist
+     * TODO all objects exported from the TinyClojure should be exported via this
+     */
+    class ExportedObject {
+    public:
+    protected:
     };
     
     /**
@@ -43,9 +52,23 @@ namespace tinyclojure {
     };
     
     /**
+     * Wrap a parser error to make it easy to throw an exception
+     */
+    class ParserError {
+    public:
+        ParserError(const int errorPosition, std::string& errorMessage) : message(errorMessage), position(errorPosition) {
+            
+        }
+        
+        std::string message;
+        int position;
+    };
+    
+    /**
      * An object to represent the parser state
      *
      * construct it with the string to be parsed
+     * parts of the parser actually live in here
      */
     class ParserState {
     public:
@@ -55,6 +78,62 @@ namespace tinyclojure {
         
         std::string& parserString;
         int position;
+                
+        /**
+         * skip newlines and whitespace.  A convenience wrapper for skipCharactersInString
+         */
+        int skipNewLinesAndWhitespace() {
+            return skipCharactersInString(" \n\r\t");
+        }
+        
+        /**
+         * the character currently pointed to by the parser state
+         */
+        char currentChar() {
+            return parserString[position];
+        }
+        
+        /**
+         * Safely peek ahead one character, returning 0 if this would run off the end of the string
+         */
+        char peekChar() {
+            if (position < parserString.length()) {
+                return parserString[position];
+            }
+            
+            return 0;
+        }
+        
+        /**
+         * advance the parser through any characters in the passed string
+         *
+         * return the number of characters skipped
+         */
+        int skipCharactersInString(std::string skipSet) {
+            int numberOfSkippedCharacters = 0;
+            
+            while (position < parserString.length()) {
+                bool currentCharInSet = false;
+                
+                for (int skipSetIndex = 0; skipSetIndex < skipSet.length(); ++skipSetIndex) {
+                    if (parserString[position] == skipSet[skipSetIndex]) {
+                        currentCharInSet = true;
+                        break;
+                    }
+                }
+                
+                if (currentCharInSet) {
+                    ++position;
+                    ++numberOfSkippedCharacters;
+                } else {
+                    break;
+                }
+                
+                ++numberOfSkippedCharacters;
+            }
+            
+            return numberOfSkippedCharacters;
+        }
     };
     
     /**
@@ -79,8 +158,9 @@ namespace tinyclojure {
         /**
          * parse the passed string, returning the parsed objects, or NULL on error
          *
-         * this will parse the data into a tree of S Expressions
+         * this will parse the data into a tree of S Expressions.  This throws an exception if there is a parser error.
          *
+         * @return either an object created by parsing the input, or NULL if nothing was found
          */
         Object* parse(std::string);
         
@@ -102,7 +182,12 @@ namespace tinyclojure {
     protected:
         /// the IO proxy for this interpreter
         IOProxy *_ioProxy;
-        GarbageCollector _gc;
+        
+        
+        GarbageCollector *_gc;
+        
+        /// the internal recursive parser function, see parse for documentation
+        Object* recursiveParse(ParserState& parseState);
     };
 }
 
