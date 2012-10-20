@@ -6,6 +6,8 @@
 //  Copyright (c) 2012 Slide to code. All rights reserved.
 //
 
+#include "TinyClojure.h"
+
 #include <iostream>
 
 int main(int argc, const char * argv[])

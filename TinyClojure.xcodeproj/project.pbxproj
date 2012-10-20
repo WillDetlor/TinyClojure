@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		18805585163300C400288E24 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18805584163300C400288E24 /* main.cpp */; };
 		18805587163300C400288E24 /* TinyClojure.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 18805586163300C400288E24 /* TinyClojure.1 */; };
+		1880558F1633010100288E24 /* TinyClojure.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1880558D1633010100288E24 /* TinyClojure.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -28,6 +29,8 @@
 		18805580163300C400288E24 /* TinyClojure */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TinyClojure; sourceTree = BUILT_PRODUCTS_DIR; };
 		18805584163300C400288E24 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		18805586163300C400288E24 /* TinyClojure.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = TinyClojure.1; sourceTree = "<group>"; };
+		1880558D1633010100288E24 /* TinyClojure.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TinyClojure.cpp; path = src/TinyClojure.cpp; sourceTree = SOURCE_ROOT; };
+		1880558E1633010100288E24 /* TinyClojure.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TinyClojure.h; path = src/TinyClojure.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +65,8 @@
 			children = (
 				18805584163300C400288E24 /* main.cpp */,
 				18805586163300C400288E24 /* TinyClojure.1 */,
+				1880558E1633010100288E24 /* TinyClojure.h */,
+				1880558D1633010100288E24 /* TinyClojure.cpp */,
 			);
 			path = TinyClojure;
 			sourceTree = "<group>";
@@ -118,6 +123,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				18805585163300C400288E24 /* main.cpp in Sources */,
+				1880558F1633010100288E24 /* TinyClojure.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
