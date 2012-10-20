@@ -10,11 +10,13 @@
 
 #include <iostream>
 
-int main(int argc, const char * argv[])
-{
-
-    // insert code here...
-    std::cout << "Hello, World!\n";
+int main(int argc, const char * argv[]) {
+    tinyclojure::TinyClojure interpreter;
+    tinyclojure::Object* code = interpreter.parse("(+ 1 2)");
+    interpreter.eval(code);
+    
+    delete code;
+    
     return 0;
 }
 
