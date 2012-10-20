@@ -77,6 +77,12 @@ namespace tinyclojure {
     TinyClojure::TinyClojure() {
         _ioProxy = new IOProxy();
         _gc = new GarbageCollector();
+        _newlineSet = std::string("\n\r");
+        
+        for (char excludeChar = 1; excludeChar<32; ++excludeChar) {
+            _excludeSet.append(&excludeChar, 1);
+        }
+        _excludeSet.append("\"()[]{}';` ");
     }
     
     TinyClojure::~TinyClojure() {
@@ -92,6 +98,12 @@ namespace tinyclojure {
         return recursiveParse(parseState);
     }
     
+    /**
+     * TODO rewrite the entire parser
+     *
+     * it is a poor translation of Lisping's objc parser,
+     * which is a highly tolerant parser, not appropriate for an interpreter
+     */
     Object* TinyClojure::recursiveParse(ParserState& parseState) {
         parseState.skipSeparators();
         
@@ -211,18 +223,20 @@ namespace tinyclojure {
                     elements.push_back(element);
                 } else {
                     // nothing left, return the s expression so far
+                    ParserError error(parseState, "Ran out of characters when building an S Expression");
+                    throw error;
                     break;
                 }
             }
             
             switch (sexpType) {
                 case sexpTypeNormal:
-                    return _gc->registerObject(new Object(elements));
+                    return listObject(elements);
                     break;
                     
                 case sexpTypeListLiteral:
                     elements.insert(elements.begin(), _gc->registerObject(new Object(std::string("list", true))));
-                    return _gc->registerObject(new Object(elements));
+                    return listObject(elements);
                     break;
                     
                 case sexpTypeLambdaShorthand:
@@ -232,7 +246,7 @@ namespace tinyclojure {
                     
                 case sexpTypeHashSet:
                     elements.insert(elements.begin(), _gc->registerObject(new Object(std::string("hash-set", true))));
-                    return _gc->registerObject(new Object(elements));
+                    return listObject(elements);
                     break;
             }
             
@@ -246,36 +260,33 @@ namespace tinyclojure {
              * * terms (recurse this function)
              * * Close parenthesis
              */
-            NSMutableArray *elements = [NSMutableArray array];
+            std::vector<Object*> elements;
             
             // advance from the parenthesis
-            (state->position)++;
+            ++parseState.position;
             
-            while (YES) {
+            while (true) {
                 // move on
-                [self skipSet:separatorSet state:state];
+                parseState.skipSeparators();
                 
-                if (state->position>=state.parseString.length) {
-                    // nothing left, return the vector so far
-                    return [TSClojureVector SExpressionFromElements:elements
-                                                  withLayoutOptions:layoutOptions];
+                if (!parseState.charactersLeft()) {
+                    ParserError error(parseState, "Ran out of characters when building a vector");
+                    throw error;
                 }
                 
-                if ([state.parseString characterAtIndex:state->position]==']') {
+                if (parseState.currentChar()==']') {
                     // advance past the ] and end the vector
-                    (state->position)++;
+                    ++parseState.position;
                     
-                    return [TSClojureVector SExpressionFromElements:elements
-                                                  withLayoutOptions:layoutOptions];
+                    return listObject(elements);
                 }
                 
-                TSElement *el = [self parse:state withLayoutOptions:layoutOptions];
-                if (el)
-                    [elements addObject:el];
-                else {
-                    // nothing left, return the s expression so far
-                    return [TSClojureVector SExpressionFromElements:elements
-                                                  withLayoutOptions:layoutOptions];
+                Object *element = recursiveParse(parseState);
+                if (element) {
+                    elements.push_back(element);
+                } else {
+                    ParserError error(parseState, "Ran out of characters when building a vector");
+                    throw error;
                 }
             }
         } else if (startChar == '{') {
@@ -287,128 +298,119 @@ namespace tinyclojure {
              * * terms (recurse this function)
              * * Close parenthesis
              */
-            NSMutableArray *elements = [NSMutableArray array];
             
-            // advance from the parenthesis
-            (state->position)++;
+            std::vector<Object*> elements;
             
-            while (YES) {
-                // move on
-                [self skipSet:separatorSet state:state];
+            // advance beyond the parenthesis
+            ++parseState.position;
+            
+            while (true) {
+                parseState.skipSeparators();
                 
-                if (state->position>=state.parseString.length) {
-                    // nothing left, return the vector so far
-                    return [TSClojureMap SExpressionFromElements:elements
-                                               withLayoutOptions:layoutOptions];
+                if (!parseState.charactersLeft()) {
+                    ParserError error(parseState, "Ran out of characters when building a map");
+                    throw error;
                 }
                 
-                if ([state.parseString characterAtIndex:state->position]=='}') {
+                if (parseState.currentChar()=='}') {
                     // advance past the ] and end the vector
-                    (state->position)++;
+                    ++parseState.position;
                     
-                    return [TSClojureMap SExpressionFromElements:elements
-                                               withLayoutOptions:layoutOptions];
+                    return listObject(elements);
                 }
                 
-                TSElement *el = [self parse:state withLayoutOptions:layoutOptions];
-                if (el)
-                    [elements addObject:el];
-                else {
-                    // nothing left, return the s expression so far
-                    return [TSClojureMap SExpressionFromElements:elements
-                                               withLayoutOptions:layoutOptions];
+                Object *element = recursiveParse(parseState);
+                if (element) {
+                    elements.push_back(element);
+                } else {
+                    ParserError error(parseState, "Ran out of characters when building a map");
+                    throw error;
                 }
             }
         } else if (startChar == ';') {
             /// start a comment, run until the end of the line
-            NSMutableString *comment = [NSMutableString string];
+            std::string comment;
             
-            while (state->position < state.parseString.length) {
-                const unichar currentChar = [state.parseString characterAtIndex:state->position];
+            while (parseState.charactersLeft()) {
+                const char currentChar = parseState.currentChar();
                 
-                BOOL commentChar = NO;
+                bool commentChar = false;
                 
-                if (![newlineSet characterIsMember:currentChar]) {
-                    [comment appendFormat:@"%C",currentChar];
-                    commentChar = YES;
-                    (state->position)++;
+                if (_newlineSet.find(currentChar) == _newlineSet.npos) {
+                    comment.append(&currentChar, 1);
+                    commentChar = true;
+                    ++parseState.position;
                 }
                 
-                if (!commentChar || state->position>=state.parseString.length) {
-                    // end of the identifier
-                    return [TSCommentTextElement elementWithLayoutOptions:layoutOptions andText:comment];
+                if (!commentChar || !parseState.charactersLeft()) {
+                    // end of the comment, ignore it
+                    return recursiveParse(parseState);
                 }
             }
         } else if (startChar == '`' || startChar == '\'') {
             // start collecting a symbol
             // TODO no real difference between symbols, identifiers and numbers
-            NSMutableString *symbol = [NSMutableString string];
+            std::string symbol;
             
-            while (state->position < state.parseString.length) {
-                const unichar   currentChar = [state.parseString characterAtIndex:state->position];
+            while (parseState.charactersLeft()) {
+                const char  currentChar = parseState.currentChar(),
+                            peekChar = parseState.peekChar(),
+                            peekPeekChar = parseState.peekPeekChar();
                 
-                unichar peekChar = 0,
-                peekPeekChar = 0;
-                if (state->position<state.parseString.length-1)
-                    peekChar = [state.parseString characterAtIndex:state->position+1];
-                if (state->position<state.parseString.length-2)
-                    peekPeekChar = [state.parseString characterAtIndex:state->position+2];
+                bool identifierChar = false;
                 
-                BOOL identifierChar = NO;
-                
-                if (![excludeSet characterIsMember:currentChar]
-                    || (symbol.length == 0)) {
-                    [symbol appendFormat:@"%C",currentChar];
-                    identifierChar = YES;
-                    (state->position)++;
+                if(_excludeSet.find(currentChar) == _excludeSet.npos
+                    || (symbol.length() == 0)) {
+                    symbol.append(&currentChar, 1);
+                    identifierChar = false;
+                    ++parseState.position;
                 }
                 
-                if (!identifierChar || state->position>=state.parseString.length || (peekChar=='#' && peekPeekChar=='"')) {
-                    // end of the identifier
-                    TSTextElement *el = [TSTextElement elementWithLayoutOptions:layoutOptions];
-                    el.text = symbol;
-                    return el;
+                if (!identifierChar
+                    || !parseState.charactersLeft()
+                    || (peekChar=='#' && peekPeekChar=='"')) {
+                    // this is a literal symbol xxx, translate to (quote xxx) and push that
+                    std::vector<Object *> els;
+                    els.push_back(_gc->registerObject(new Object("quote", true)));
+                    els.push_back(_gc->registerObject(new Object(symbol, true)));
+                    return listObject(els);
                 }
             }
-        } else if (![excludeSet characterIsMember:startChar]) {
+        } else if (_excludeSet.find(startChar) == _excludeSet.npos) {
             // start an identifier
-            NSMutableString *identifier = [NSMutableString string];
+            std::string identifier;
             
-            while (state->position < state.parseString.length) {
-                const unichar currentChar = [state.parseString characterAtIndex:state->position];
+            while (parseState.charactersLeft()) {
+                const char  currentChar = parseState.currentChar(),
+                            peekChar = parseState.peekChar(),
+                            peekPeekChar = parseState.peekPeekChar();
                 
-                unichar peekChar = 0,
-                peekPeekChar = 0;
-                if (state->position<state.parseString.length-1)
-                    peekChar = [state.parseString characterAtIndex:state->position+1];
-                if (state->position<state.parseString.length-2)
-                    peekPeekChar = [state.parseString characterAtIndex:state->position+2];
+                bool identifierChar = false;
                 
-                
-                BOOL identifierChar = NO;
-                
-                if (![excludeSet characterIsMember:currentChar]
-                    || ((startChar=='#') && (currentChar==';') && (state->position == startPosition+1))) {    // case to deal with inline comments
-                    [identifier appendFormat:@"%C",currentChar];
-                    identifierChar = YES;
-                    (state->position)++;
+                if (_excludeSet.find(currentChar) == _excludeSet.npos
+                    || ((startChar=='#') && (currentChar==';') && (parseState.position == startPosition+1))) {    // case to deal with inline comments
+                    identifier.append(&currentChar, 1);
+                    identifierChar = true;
+                    ++parseState.position;
                 }
                 
-                if (!identifierChar || state->position>=state.parseString.length || (peekChar=='#' && peekPeekChar=='"')) {
-                    if ([identifier rangeOfString:@"#;"].location==0) {
+                if (!identifierChar
+                    || !parseState.charactersLeft()
+                    || (peekChar=='#' && peekPeekChar=='"')) {
+                    if (identifier.find("#;")==0) {
                         // inline comment element
-                        return [TSCommentTextElement elementWithLayoutOptions:layoutOptions andText:identifier];
+                        return recursiveParse(parseState);
                     } else {
-                        // standard text element
-                        return [TSTextElement elementWithLayoutOptions:layoutOptions andText:identifier];
+                        // standard text, ie a symbol
+                        
+                        // TODO test for number
+                        
+                        return _gc->registerObject(new Object(identifier, true));
                     }
                 }            
             }
         }
-        
-        return nil;
-    }
-        
+                
         return NULL;
     }
     
@@ -421,7 +423,7 @@ namespace tinyclojure {
 #pragma mark -
 #pragma mark Garbage Collector
     
-    void GarbageCollector::registerObject(Object* object) {
+    Object* GarbageCollector::registerObject(Object* object) {
         _objects.insert(object);
         return object;
     }
@@ -432,5 +434,50 @@ namespace tinyclojure {
     GarbageCollector::~GarbageCollector() {
         for (std::set<Object*>::iterator it = _objects.begin(); it != _objects.end(); ++it)
             delete *it;
+    }
+
+#pragma mark -
+#pragma mark ParserState
+
+    int ParserState::skipCharactersInString(std::string skipSet) {
+        int numberOfSkippedCharacters = 0;
+        
+        while (charactersLeft()) {
+            bool currentCharInSet = false;
+            
+            for (int skipSetIndex = 0; skipSetIndex < skipSet.length(); ++skipSetIndex) {
+                if (parserString[position] == skipSet[skipSetIndex]) {
+                    currentCharInSet = true;
+                    break;
+                }
+            }
+            
+            if (currentCharInSet) {
+                ++position;
+                ++numberOfSkippedCharacters;
+            } else {
+                break;
+            }
+            
+            ++numberOfSkippedCharacters;
+        }
+        
+        return numberOfSkippedCharacters;
+    }
+
+    char ParserState::peekChar() {
+        if (position < parserString.length()-1) {
+            return parserString[position+1];
+        }
+        
+        return 0;
+    }
+
+    char ParserState::peekPeekChar() {
+        if (position < parserString.length()-2) {
+            return parserString[position+2];
+        }
+        
+        return 0;
     }
 }

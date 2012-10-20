@@ -35,10 +35,7 @@ namespace tinyclojure {
         
         /// construct a pair
         Object(Object *left, Object *right);
-        
-        /// construct a list
-        Object(std::vector<Object*> list);
-        
+                
         ~Object();
         
         /// this object's type
@@ -125,13 +122,12 @@ namespace tinyclojure {
         /**
          * Safely peek ahead one character, returning 0 if this would run off the end of the string
          */
-        char peekChar() {
-            if (charactersLeft()) {
-                return parserString[position];
-            }
-            
-            return 0;
-        }
+        char peekChar();
+        
+        /**
+         * Safely peek ahead two characters, returning 0 if this would run off the end of the string
+         */
+        char peekPeekChar();
         
         /**
          * return true when the state position is within the bounds of the string
@@ -145,31 +141,7 @@ namespace tinyclojure {
          *
          * return the number of characters skipped
          */
-        int skipCharactersInString(std::string skipSet) {
-            int numberOfSkippedCharacters = 0;
-            
-            while (position < parserString.length()) {
-                bool currentCharInSet = false;
-                
-                for (int skipSetIndex = 0; skipSetIndex < skipSet.length(); ++skipSetIndex) {
-                    if (parserString[position] == skipSet[skipSetIndex]) {
-                        currentCharInSet = true;
-                        break;
-                    }
-                }
-                
-                if (currentCharInSet) {
-                    ++position;
-                    ++numberOfSkippedCharacters;
-                } else {
-                    break;
-                }
-                
-                ++numberOfSkippedCharacters;
-            }
-            
-            return numberOfSkippedCharacters;
-        }
+        int skipCharactersInString(std::string skipSet);
     };
     
     /**
@@ -211,12 +183,12 @@ namespace tinyclojure {
          *
          * @return either an object created by parsing the input, or NULL if nothing was found
          */
-        Object* parse(std::string);
+        Object* parse(std::string stringin);
         
         /**
          * evaluate the code passed above
          */
-        Object* eval(Object*);
+        Object* eval(Object* object);
         
         /**
          * default constructor
@@ -243,6 +215,8 @@ namespace tinyclojure {
         
         /// the internal recursive parser function, see parse for documentation
         Object* recursiveParse(ParserState& parseState);
+        
+        std::string _newlineSet, _excludeSet;
     };
 }
 
