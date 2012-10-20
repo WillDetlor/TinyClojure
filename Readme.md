@@ -41,6 +41,9 @@ Roughly, my coding conventions are
 * No macros (C++ of course).
 * Document all interfaces with Doxygen style comments.
 * All variable and method names must be descriptive.  No one letter variables please.  Comment code when necessary, but if you can clarify the operation of your code through the method and variables names instead, that is better.
+* Git
+    * If possible no broken commits, it is a disaster when git bisecting.
+    * 
 
 Less defined principles are
 

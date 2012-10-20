@@ -16,10 +16,44 @@
 
 namespace tinyclojure {    
     /**
-     * base class for all clojure values
+     * class to represent Clojure objects
      */
     class Object {
+    public:
+        typedef enum {
+            kObjectTypeString,
+            kObjectTypeCons,
+            kObjectTypeNil,
+        } ObjectType;
         
+        /// construct a string object
+        Object(std::string stringValue);
+        
+        /// construct a nil object
+        Object();
+        
+        /// construct a pair
+        Object(Object *left, Object *right);
+        
+        /// construct a list
+        Object(std::vector<Object*> list);
+        
+        ~Object();
+        
+        /// this object's type
+        ObjectType type();
+        
+        /// return a reference to this object as a string value
+        std::string& stringValue();
+        
+    protected:
+        ObjectType _type;
+        union {
+            std::string* stringValue;
+            struct {
+                Object *left, *right;
+            } consValue;
+        } pointer;
     };
     
     /**
@@ -50,20 +84,7 @@ namespace tinyclojure {
     protected:
         
     };
-    
-    /**
-     * Wrap a parser error to make it easy to throw an exception
-     */
-    class ParserError {
-    public:
-        ParserError(const int errorPosition, std::string& errorMessage) : message(errorMessage), position(errorPosition) {
-            
-        }
         
-        std::string message;
-        int position;
-    };
-    
     /**
      * An object to represent the parser state
      *
@@ -87,6 +108,13 @@ namespace tinyclojure {
         }
         
         /**
+         * a clojure separator set
+         */
+        int skipSeparators() {
+            return skipCharactersInString(" \t,\n\r");
+        }
+        
+        /**
          * the character currently pointed to by the parser state
          */
         char currentChar() {
@@ -97,11 +125,18 @@ namespace tinyclojure {
          * Safely peek ahead one character, returning 0 if this would run off the end of the string
          */
         char peekChar() {
-            if (position < parserString.length()) {
+            if (charactersLeft()) {
                 return parserString[position];
             }
             
             return 0;
+        }
+        
+        /**
+         * return true when the state position is within the bounds of the string
+         */
+        bool charactersLeft() {
+            return position < parserString.length();
         }
         
         /**
@@ -137,6 +172,19 @@ namespace tinyclojure {
     };
     
     /**
+     * Wrap a parser error to make it easy to throw an exception
+     */
+    class ParserError {
+    public:
+        ParserError(ParserState &state, std::string errorMessage) : message(errorMessage), position(state.position) {
+            
+        }
+        
+        std::string message;
+        int position;
+    };
+    
+    /**
      * a very simple garbage collector for TinyClojure objects
      */
     class GarbageCollector {
@@ -147,7 +195,7 @@ namespace tinyclojure {
         /**
          * register an object with the garbage collector
          */
-        void registerObject(Object* object);
+        Object* registerObject(Object* object);
         
     protected:
         std::set<Object*> _objects;
@@ -183,6 +231,12 @@ namespace tinyclojure {
         /// the IO proxy for this interpreter
         IOProxy *_ioProxy;
         
+        /**
+         * create a list from a std::vector
+         *
+         * this is here, not in the Object constructor because it needs access to the garbage collector
+         */
+        Object* listObject(std::vector<Object*> list);
         
         GarbageCollector *_gc;
         

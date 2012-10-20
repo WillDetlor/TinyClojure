@@ -9,9 +9,64 @@
 #include "TinyClojure.h"
 
 namespace tinyclojure {
+
+#pragma mark -
+#pragma mark Object
+    
+    Object::Object() {
+        _type = kObjectTypeNil;
+    }
+    
+    Object::Object(std::string stringVal) {
+        _type = kObjectTypeString;
+        pointer.stringValue = new std::string(stringVal);
+    }
+    
+    Object::~Object() {
+        switch (_type) {
+            case kObjectTypeString:
+                delete pointer.stringValue;
+                break;
+            
+            case kObjectTypeCons:
+                // it isn't our business deleting "unused" objects, that is for the GC
+            case kObjectTypeNil:
+                // nothing need be done
+                break;
+        }
+    }
+    
+    Object::Object(Object *left, Object *right) {
+        _type = kObjectTypeCons;
+        pointer.consValue.left = left;
+        pointer.consValue.right = right;
+    }
+        
+    std::string& Object::stringValue() {
+        return *pointer.stringValue;
+    }
     
 #pragma mark -
 #pragma mark TinyClojure
+    
+    Object* TinyClojure::listObject(std::vector<Object*> list) {
+        if (list.size()) {
+            if (list.size()==1) {
+                // end a list with a nil sentinel
+                Object *nilObject = _gc->registerObject(new Object());
+                return _gc->registerObject(new Object(list[0], nilObject));
+            } else {
+                Object *left = list[0];
+                list.erase(list.begin());
+                return _gc->registerObject(new Object(left, listObject(list)));
+            }
+        } else {
+            // clojure's empty lists seem to be (cons nil nil)
+            Object *nilObject = _gc->registerObject(new Object());
+            return _gc->registerObject(new Object(nilObject, nilObject));
+        }
+    }
+
     
     TinyClojure::TinyClojure() {
         _ioProxy = new IOProxy();
@@ -32,7 +87,7 @@ namespace tinyclojure {
     }
     
     Object* TinyClojure::recursiveParse(ParserState& parseState) {
-        parseState.skipNewLinesAndWhitespace();
+        parseState.skipSeparators();
         
         if (parseState.position >= parseState.parserString.length()) {
             // there is nothing here return NULL
@@ -78,44 +133,42 @@ namespace tinyclojure {
         
         if (startChar == '"' || stringType == stringTypeRegex) {
             // start collecting a string
-            NSMutableString *stringbuf = [NSMutableString string];
+            std::string stringbuf;
             
-            BOOL escapeNextChar = NO;
+            bool escapeNextChar = false;
+
+            // ignore the intial string char
+            ++parseState.position;
             
-            while (state->position < state.parseString.length) {
-                const unichar currentChar = [state.parseString characterAtIndex:state->position];
+            while (parseState.charactersLeft()) {
+                const char currentChar = parseState.currentChar();
                 
                 /// TODO check for escapes
-                [stringbuf appendFormat:@"%C",currentChar];
-                (state->position)++;
+                stringbuf.append(&currentChar, 1);
                 
                 if (escapeNextChar) {
-                    escapeNextChar = NO;
+                    escapeNextChar = false;
                 } else {
                     if (currentChar == '\\') {
-                        escapeNextChar = YES;
-                    } else if (currentChar=='"' && stringbuf.length>1) {
+                        escapeNextChar = true;
+                    } else if (currentChar=='"' && stringbuf.length()>1) {
                         // in the case of regexes, add the hash to the string
-                        if (stringType == stringTypeRegex)
-                            stringbuf = [NSString stringWithFormat:@"#%@",stringbuf];
+                        if (stringType == stringTypeRegex) {
+                            stringbuf.insert(0, "#");
+                        }
                         
                         // end of the string
-                        TSTextElement *el = [TSTextElement elementWithLayoutOptions:layoutOptions];
-                        el.text = stringbuf;
-                        return el;
+                        Object *element = new Object(stringbuf);
+                        _gc->registerObject(element);
+                        return element;
                     }
                 }
             }
             
-            // ran out of characters.  It is helpful to close the qoute and return what is left as a string
-            [stringbuf appendString:@"\""];
-            if (stringType == stringTypeRegex)
-                stringbuf = [NSString stringWithFormat:@"#%@",stringbuf];
-            TSTextElement *el = [TSTextElement elementWithLayoutOptions:layoutOptions];
-            el.text = stringbuf;
-            return el;
+            ParserError error(parseState, std::string("Ran out of characters when parsing a string"));
+            throw error;
         } else if (startChar == '(' || sexpType == sexpTypeHashSet) {
-            unichar closeChar = ')';
+            char closeChar = ')';
             if (sexpType == sexpTypeHashSet) closeChar = '}';
             
             /*
@@ -126,16 +179,16 @@ namespace tinyclojure {
              * * terms (recurse this function)
              * * Close parenthesis
              */
-            NSMutableArray *elements = [NSMutableArray array];
+            std::vector<Object*> elements;
             
             // advance from the parenthesis
-            (state->position)++;
+            ++parseState.position;
             
-            while (YES) {
+            while (true) {
                 // move on
-                [self skipSet:separatorSet state:state];
+                parseState.skipSeparators();
                 
-                if (state->position>=state.parseString.length) {
+                if (!parseState.charactersLeft()) {
                     // nothing left, return the s expression so far
                     break;
                 }
@@ -372,6 +425,7 @@ namespace tinyclojure {
     
     void GarbageCollector::registerObject(Object* object) {
         _objects.insert(object);
+        return object;
     }
     
     GarbageCollector::GarbageCollector() {
