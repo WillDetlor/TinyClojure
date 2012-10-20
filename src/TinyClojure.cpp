@@ -17,13 +17,19 @@ namespace tinyclojure {
         _type = kObjectTypeNil;
     }
     
-    Object::Object(std::string stringVal) {
-        _type = kObjectTypeString;
-        pointer.stringValue = new std::string(stringVal);
+    Object::Object(std::string stringVal, bool symbol) {
+        if (symbol) {
+            _type = kObjectTypeSymbol;
+            pointer.stringValue = new std::string(stringVal);            
+        } else {
+            _type = kObjectTypeString;
+            pointer.stringValue = new std::string(stringVal);
+        }
     }
     
     Object::~Object() {
         switch (_type) {
+            case kObjectTypeSymbol:
             case kObjectTypeString:
                 delete pointer.stringValue;
                 break;
@@ -193,17 +199,17 @@ namespace tinyclojure {
                     break;
                 }
                 
-                if ([state.parseString characterAtIndex:state->position]==closeChar) {
+                if (parseState.currentChar()==closeChar) {
                     // advance past the ) and end the S expression
-                    (state->position)++;
+                    ++parseState.position;
                     
                     break;
                 }
                 
-                TSElement *el = [self parse:state withLayoutOptions:layoutOptions];
-                if (el)
-                    [elements addObject:el];
-                else {
+                Object *element = recursiveParse(parseState);
+                if (element) {
+                    elements.push_back(element);
+                } else {
                     // nothing left, return the s expression so far
                     break;
                 }
@@ -211,29 +217,26 @@ namespace tinyclojure {
             
             switch (sexpType) {
                 case sexpTypeNormal:
-                    return [TSClojureSExpression SExpressionFromElements:elements
-                                                       withLayoutOptions:layoutOptions
-                                                                  source:self];
+                    return _gc->registerObject(new Object(elements));
                     break;
                     
                 case sexpTypeListLiteral:
-                    return [TSClojureListLiteral SExpressionFromElements:elements
-                                                       withLayoutOptions:layoutOptions];
+                    elements.insert(elements.begin(), _gc->registerObject(new Object(std::string("list", true))));
+                    return _gc->registerObject(new Object(elements));
                     break;
                     
                 case sexpTypeLambdaShorthand:
-                    return [TSClojureLambdaShorthand SExpressionFromElements:elements
-                                                           withLayoutOptions:layoutOptions
-                                                                      source:self];
+                    _ioProxy->writeErr("lambda shorthand unimplemented");
+                    return NULL;
                     break;
                     
                 case sexpTypeHashSet:
-                    return [TSClojureHashSet SExpressionFromElements:elements
-                                                   withLayoutOptions:layoutOptions];
+                    elements.insert(elements.begin(), _gc->registerObject(new Object(std::string("hash-set", true))));
+                    return _gc->registerObject(new Object(elements));
                     break;
             }
             
-            return nil;
+            return NULL;
         } else if (startChar == '[') {
             /*
              * start a Clojure vector
@@ -414,11 +417,6 @@ namespace tinyclojure {
     Object* TinyClojure::eval(Object* code) {
         return NULL;
     }
-    
-#pragma mark -
-#pragma mark Object
-
-
 
 #pragma mark -
 #pragma mark Garbage Collector

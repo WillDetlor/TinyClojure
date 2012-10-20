@@ -22,12 +22,13 @@ namespace tinyclojure {
     public:
         typedef enum {
             kObjectTypeString,
+            kObjectTypeSymbol,
             kObjectTypeCons,
             kObjectTypeNil,
         } ObjectType;
         
-        /// construct a string object
-        Object(std::string stringValue);
+        /// construct either a symbol (if symbol=true) or a string object otherwise
+        Object(std::string stringValue, bool symbol=false);
         
         /// construct a nil object
         Object();
