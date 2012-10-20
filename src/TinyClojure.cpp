@@ -7,6 +7,7 @@
 //
 
 #include "TinyClojure.h"
+#include <sstream>
 
 namespace tinyclojure {
 
@@ -60,6 +61,34 @@ namespace tinyclojure {
     
     int& Object::integerValue() {
         return pointer.integerValue;
+    }
+    
+    std::string Object::stringRepresentation() {
+        std::stringstream stringBuilder;
+        
+        switch (_type) {
+            case kObjectTypeString:
+                stringBuilder << '"' << *pointer.stringValue << '"';
+                break;
+                
+            case kObjectTypeInteger:
+                stringBuilder << pointer.integerValue;
+                break;
+                
+            case kObjectTypeCons:
+                stringBuilder << "(cons " << pointer.consValue.left->stringRepresentation() << " " << pointer.consValue.right->stringRepresentation() << ")";
+                break;
+                
+            case kObjectTypeNil:
+                stringBuilder << "nil";
+                break;
+                
+            case kObjectTypeSymbol:
+                stringBuilder << "'" << *pointer.stringValue;
+                break;
+        }
+        
+        return stringBuilder.str();
     }
     
 #pragma mark -
@@ -175,6 +204,7 @@ namespace tinyclojure {
                 
                 /// TODO check for escapes
                 stringbuf.append(&currentChar, 1);
+                ++parseState.position;
                 
                 if (escapeNextChar) {
                     escapeNextChar = false;
@@ -182,10 +212,13 @@ namespace tinyclojure {
                     if (currentChar == '\\') {
                         escapeNextChar = true;
                     } else if (currentChar=='"' && stringbuf.length()>1) {
-                        // in the case of regexes, add the hash to the string
+                        // TODO do something in the case of regexes
                         if (stringType == stringTypeRegex) {
-                            stringbuf.insert(0, "#");
+                            std::cerr << "Not dealing with regexes" << std::endl;
                         }
+                        
+                        // remove the " that has been collected from the end of the string
+                        stringbuf = stringbuf.substr(0, stringbuf.length()-1);
                         
                         // end of the string
                         Object *element = new Object(stringbuf);
@@ -418,7 +451,7 @@ namespace tinyclojure {
                         // TODO test for number properly (ie decimals)
                         bool isInteger = true;
                         for (int identifierIndex = 0; identifierIndex < identifier.size(); ++identifierIndex) {
-                            if (_numberSet.find(identifier[identifierIndex]) != _numberSet.npos) {
+                            if (_numberSet.find(identifier[identifierIndex]) == _numberSet.npos) {
                                 isInteger = false;
                                 break;
                             }

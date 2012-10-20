@@ -16,6 +16,8 @@ int main(int argc, const char * argv[]) {
     
     try {
         code = interpreter.parse("(+ 1 2)");
+        
+        std::cout << code->stringRepresentation() << std::endl;
     } catch (tinyclojure::ParserError error) {
         std::cout << error.position << ": " << error.message << std::endl;
         return 1;

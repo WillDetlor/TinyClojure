@@ -14,7 +14,26 @@
 #include <set>
 #include <vector>
 
-namespace tinyclojure {    
+namespace tinyclojure {
+    /**
+     * A class/interface for the interpreters IO
+     *
+     * Subclassing this allows for easier
+     */
+    class IOProxy {
+    public:
+        void writeOut(std::string stringout) {
+            std::cout << stringout;
+        }
+        
+        void writeErr(std::string stringout) {
+            std::cerr << stringout;
+        }
+    protected:
+        
+    };
+
+    
     /**
      * class to represent Clojure objects
      */
@@ -51,6 +70,9 @@ namespace tinyclojure {
         /// return a reference to this object as an integer value
         int& integerValue();
         
+        /// build a string representation of the object
+        std::string stringRepresentation();
+        
     protected:
         ObjectType _type;
         union {
@@ -72,25 +94,7 @@ namespace tinyclojure {
     public:
     protected:
     };
-    
-    /**
-     * A class/interface for the interpreters IO
-     *
-     * Subclassing this allows for easier
-     */
-    class IOProxy {
-    public:
-        void writeOut(std::string stringout) {
-            std::cout << stringout;
-        }
-        
-        void writeErr(std::string stringout) {
-            std::cerr << stringout;
-        }
-    protected:
-        
-    };
-        
+            
     /**
      * An object to represent the parser state
      *
