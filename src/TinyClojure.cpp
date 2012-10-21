@@ -35,7 +35,7 @@ namespace tinyclojure {
 #pragma mark Standard Library
     
     namespace core {
-        /// function for adding two 
+        /// function for adding a list of numbers
         class Plus : public ExtensionFunction {
             
         };
@@ -136,7 +136,7 @@ namespace tinyclojure {
         return stringBuilder.str();
     }
 
-    bool Object::isList(std::vector<Object*>& results) {
+    bool Object::isList() {
         Object *currentObject = this;
         
         while (currentObject->_type == kObjectTypeCons) {
@@ -227,7 +227,7 @@ namespace tinyclojure {
         ParserState parseState(startText);
         return recursiveParse(parseState);
     }
-    
+        
     /**
      * TODO rewrite the entire parser
      *
@@ -564,8 +564,45 @@ namespace tinyclojure {
     
 #pragma mark evaluator
     
+    Object* TinyClojure::recursiveEval(InterpreterScope& interpreterState, Object *code) {
+        switch (code->type()) {
+            case Object::kObjectTypeNil:
+                return NULL;
+                break;
+                
+            case Object::kObjectTypeInteger:
+            case Object::kObjectTypeString:
+                return code;
+                break;
+                
+            case Object::kObjectTypeSymbol:
+                std::cout << "TODO implement Symbol translation" << std::endl;
+                return NULL;
+                break;
+                
+            case Object::kObjectTypeCons:
+                if (code->isList()) {
+                    std::vector<Object*> elements;
+                    Object *identifierObject = elements[0];
+                    elements.erase(elements.begin());   // elements now contains the arguments to the function
+                    
+                    if (identifierObject->type()==Object::kObjectTypeSymbol) {
+                        
+                    } else {
+                        
+                    }
+                } else {
+                    
+                }
+                break;
+        }
+        
+        return NULL;        
+    }
+    
     Object* TinyClojure::eval(Object* code) {
-        return NULL;
+        InterpreterScope interpreterState;
+        return recursiveEval(interpreterState, code);
     }
 
 #pragma mark -

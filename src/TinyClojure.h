@@ -83,7 +83,7 @@ namespace tinyclojure {
         ~Object();
         
         /// this object's type
-        ObjectType type();
+        ObjectType type() { return _type; }
         
         /// return a reference to this object as a string value
         std::string& stringValue();
@@ -95,7 +95,7 @@ namespace tinyclojure {
         bool buildList(std::vector<Object*>& results);
 
         /// build list, returning true if it is a list, false otherwise
-        bool isList(std::vector<Object*>& results);
+        bool isList();
         
         /// build a string representation of the object
         std::string stringRepresentation(bool expandList=true);
@@ -215,9 +215,43 @@ namespace tinyclojure {
      */
     class InterpreterScope {
     public:
+        /// construct a root scope
+        InterpreterScope() : _parentScope(NULL) {
+            
+        }
         
+        /// construct a scope from a parent scope
+        InterpreterScope(InterpreterScope *parentScope) : _parentScope(parentScope) {
+            
+        }
+        
+        /// return the symbol or NULL
+        Object *lookupSymbolInScope(std::string symbolName) {
+            std::map<std::string, Object*>::iterator it = _symbolTable.find(symbolName);
+            
+            if (it == _symbolTable.end()) {
+                return NULL;
+            } else {
+                return it->second;
+            }
+        }
+        
+        /// look for a symbol (in this and all parent scopes), return NULL if not found
+        Object *lookupSymbol(std::string symbolName) {
+            Object *ret = lookupSymbolInScope(symbolName);
+            if (ret) {
+                return ret;
+            } else {
+                if (_parentScope) {
+                    return _parentScope->lookupSymbol(symbolName);
+                } else {
+                    return NULL;
+                }
+            }
+        }
     protected:
-        
+        InterpreterScope *_parentScope;
+        std::map<std::string, Object*> _symbolTable;
     };
     
     /**
@@ -225,8 +259,13 @@ namespace tinyclojure {
      */
     class Error {
     public:
+        /// constructor for parser errors
         Error(ParserState &state, std::string errorMessage) : message(errorMessage), position(state.position) {
             
+        }
+        
+        /// constructor for generic errors
+        Error(std::string errorMessage) : message(errorMessage) {
         }
         
         std::string message;
@@ -348,6 +387,9 @@ namespace tinyclojure {
         
         /// the internal recursive parser function, see parse for documentation
         Object* recursiveParse(ParserState& parseState);
+        
+        /// the internal recursive evaluator, see eval for documentations
+        Object* recursiveEval(InterpreterScope& interpreterState, Object *code);
         
         std::string _newlineSet, _excludeSet, _numberSet;
         
