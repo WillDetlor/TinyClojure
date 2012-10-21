@@ -1,12 +1,12 @@
-# NB this whole project, including this README is brand new. Disregard for now
-
 # TinyClojure
 
 ### What is TinyClojure
 
 TinyClojure is a project to build a minute, easily embeddable version of Clojure/ClojureScript, essentially [TinyScheme](http://tinyscheme.sourceforge.net/home.html), but for Clojure.  For TinyClojure small size, hackability and ease of embedding will always take precedence over efficiency.
 
-I started this project because I was looking for an embeddable clojure for [Lisping](http://slidetocode.com/), an iPad Lisp development environment I develop.
+I started this project because I was looking for an embeddable Clojure for [Lisping](http://slidetocode.com/), an iPad Lisp development environment I develop.  I wanted the functionality of [ClojureC](https://github.com/schani/clojurec), but without the external library dependencies and the complex build process, in other words a Clojure version of [TinyScheme](http://tinyscheme.sourceforge.net/home.html).  
+
+It is very early days still, and this interpreter is not usable yet.  It shouldn't be long though.
 
 
 ### How do I embed TinyClojure in my code?
@@ -30,7 +30,16 @@ It seems to me that Greenspun's tenth rule is correct.  To paraphrase "all suffi
 
 ### Exactly what language are you targeting?
 
-Ostensibly Clojure, but more likely ClojureScript.  However, when I last checked ClojureScript lacked the (eval ) form, and for me, LISP without (eval ) is no LISP at all.
+Ostensibly Clojure, I would say ClojureScript, but when I last looked, ClojureScript lacked the (eval ) form, and for me, LISP without (eval ) is no LISP at all.  Right now, I'm looking to implement the Clojure language itself (without namespaces, imports or any of the Java interface), and its core library in [the Clojure.Core API](http://richhickey.github.com/clojure/clojure.core-api.html).
+
+### TODO
+
+If you want to get involved, get in touch with me at slidetocode at gmail dot com.  Forks and pull requests are a good thing.  The current TODO list is
+
+* Right now, the interpreter is "in progress", and it really just needs to get started
+* Garbage collector.  Right now there is no garbage collector to speak of.  Objects collect until the interpreter destructs, then they are deleted.
+* Parser rewrite.  I converted the parser from the tolerant parser used in Lisping.  It is neither elegant, nor an appropriate design.  I would like to replace it with something more elegant once this interpreter is up and running.
+* Implement all the Clojure.Core functions.
 
 
 ### Coding conventions
@@ -50,9 +59,9 @@ Less defined principles are
 
 * Order of precedence
     * Hackability.  No extension language is at all useful unless it is easy to read, fix and extend.
-    * Small compiled size.  Add as many braces and comments as you like, but this must compile to be small
     * Ease of embedding.  One .h, one .cpp and four lines of code should be all you need to embed this in your code.
-    * Startup speed.  In general I'm not sorried about speed, but an interpreter cannot be regarded as lightweight if takes a long time to construct and initialise.
+    * Small compiled size.  I'm not aiming to match TinyScheme's minute footprint, but noone likes big bulky software.
+    * Startup speed.  In general I'm not worried about speed, but an interpreter cannot be regarded as lightweight if takes a long time to construct and initialise.
     * Execution speed.  I'm willing to relax the small size rule a little for large performance gains, but this interpreter is only meant for small scripts.  Execution speed just isn't that important.
 * If you want to add functionality that violates the golden rule, then as long as it can be turned on and off with an #ifdef then that is fine.
 
@@ -64,4 +73,4 @@ If you want to contact me, email me at slidetocode at gmail dot com
 
 ### License
 
-Tiny clojure is licensed under the standard MIT license so that it can be used anywhere, for anything.
+Tiny clojure is licensed under the standard MIT license so that it can be used anywhere, for anything.  Nevertheless, pull requests would be greatly appreciated

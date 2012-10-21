@@ -91,8 +91,11 @@ namespace tinyclojure {
         /// return a reference to this object as an integer value
         int& integerValue();
         
+        /// build list, returning true and placing objects in the vector if it is a list, false otherwise
+        bool buildList(std::vector<Object*>& results);
+        
         /// build a string representation of the object
-        std::string stringRepresentation();
+        std::string stringRepresentation(bool expandList=true);
         
     protected:
         ObjectType _type;
@@ -177,11 +180,11 @@ namespace tinyclojure {
     };
     
     /**
-     * Wrap a parser error to make it easy to throw an exception
+     * Wrap a TinyClojure error to make it easy to throw an exception
      */
-    class ParserError {
+    class Error {
     public:
-        ParserError(ParserState &state, std::string errorMessage) : message(errorMessage), position(state.position) {
+        Error(ParserState &state, std::string errorMessage) : message(errorMessage), position(state.position) {
             
         }
         

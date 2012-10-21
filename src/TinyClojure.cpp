@@ -20,7 +20,6 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-//
 //  TinyClojure.cpp
 //  TinyClojure
 //
@@ -84,7 +83,7 @@ namespace tinyclojure {
         return pointer.integerValue;
     }
     
-    std::string Object::stringRepresentation() {
+    std::string Object::stringRepresentation(bool expandList) {
         std::stringstream stringBuilder;
         
         switch (_type) {
@@ -96,21 +95,57 @@ namespace tinyclojure {
                 stringBuilder << pointer.integerValue;
                 break;
                 
-            case kObjectTypeCons:
-                // TODO print something prettier in the case of a list
-                stringBuilder << "(cons " << pointer.consValue.left->stringRepresentation() << " " << pointer.consValue.right->stringRepresentation() << ")";
-                break;
+            case kObjectTypeCons: {
+                std::vector<Object*> elements;
+                
+                if (buildList(elements) && expandList) {
+                    stringBuilder << "`(";
+                    for (int listIndex = 0; listIndex < elements.size(); ++listIndex) {
+                        stringBuilder   << elements[listIndex]->stringRepresentation(false)
+                                        << " ";
+                    }
+                    stringBuilder << ")";
+                } else {
+                    stringBuilder   << "(cons "
+                                    << pointer.consValue.left->stringRepresentation()
+                                    << " "
+                                    << pointer.consValue.right->stringRepresentation()
+                                    << ")";
+                }
+                } break;
                 
             case kObjectTypeNil:
                 stringBuilder << "nil";
                 break;
                 
             case kObjectTypeSymbol:
-                stringBuilder << "'" << *pointer.stringValue;
+                stringBuilder << *pointer.stringValue;
                 break;
         }
         
         return stringBuilder.str();
+    }
+    
+    bool Object::buildList(std::vector<Object*>& results) {
+        Object *currentObject = this;
+        
+        while (currentObject->_type == kObjectTypeCons) {
+            if (currentObject->pointer.consValue.right->_type == kObjectTypeCons) {
+                // this is a cons with a cons as its right value, continue the list
+                results.push_back(currentObject->pointer.consValue.left);
+                currentObject = currentObject->pointer.consValue.right;
+            } else if (currentObject->pointer.consValue.right->_type == kObjectTypeNil) {
+                // a nil terminator for the list
+                results.push_back(currentObject->pointer.consValue.left);
+                return true;
+            } else {
+                // the list has ended
+                results.push_back(currentObject);
+                return true;
+            }
+        }
+        
+        return false;
     }
     
 #pragma mark -
@@ -250,7 +285,7 @@ namespace tinyclojure {
                 }
             }
             
-            ParserError error(parseState, std::string("Ran out of characters when parsing a string"));
+            Error error(parseState, std::string("Ran out of characters when parsing a string"));
             throw error;
         } else if (startChar == '(' || sexpType == sexpTypeHashSet) {
             char closeChar = ')';
@@ -290,7 +325,7 @@ namespace tinyclojure {
                     elements.push_back(element);
                 } else {
                     // nothing left, return the s expression so far
-                    ParserError error(parseState, "Ran out of characters when building an S Expression");
+                    Error error(parseState, "Ran out of characters when building an S Expression");
                     throw error;
                     break;
                 }
@@ -337,7 +372,7 @@ namespace tinyclojure {
                 parseState.skipSeparators();
                 
                 if (!parseState.charactersLeft()) {
-                    ParserError error(parseState, "Ran out of characters when building a vector");
+                    Error error(parseState, "Ran out of characters when building a vector");
                     throw error;
                 }
                 
@@ -346,7 +381,7 @@ namespace tinyclojure {
                     ++parseState.position;
 
                     // insert the vector identifier at the beginning
-                    elements.insert(elements.begin(), _gc->registerObject(new Object("vector")));
+                    elements.insert(elements.begin(), _gc->registerObject(new Object("vector", true)));
                     
                     return listObject(elements);
                 }
@@ -355,7 +390,7 @@ namespace tinyclojure {
                 if (element) {
                     elements.push_back(element);
                 } else {
-                    ParserError error(parseState, "Ran out of characters when building a vector");
+                    Error error(parseState, "Ran out of characters when building a vector");
                     throw error;
                 }
             }
@@ -378,7 +413,7 @@ namespace tinyclojure {
                 parseState.skipSeparators();
                 
                 if (!parseState.charactersLeft()) {
-                    ParserError error(parseState, "Ran out of characters when building a map");
+                    Error error(parseState, "Ran out of characters when building a map");
                     throw error;
                 }
                 
@@ -393,7 +428,7 @@ namespace tinyclojure {
                 if (element) {
                     elements.push_back(element);
                 } else {
-                    ParserError error(parseState, "Ran out of characters when building a map");
+                    Error error(parseState, "Ran out of characters when building a map");
                     throw error;
                 }
             }
