@@ -1,9 +1,29 @@
+// Copyright (C) 2012 Duncan Steele
+// http://slidetocode.com
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 //  TinyClojure.h
 //  TinyClojure
 //
 //  Created by Duncan Steele on 20/10/2012.
-//  Copyright (c) 2012 Slide to code. All rights reserved.
 //
 
 #ifndef __TinyClojure__TinyClojure__
@@ -12,6 +32,7 @@
 #include <iostream>
 #include <string>
 #include <set>
+#include <map>
 #include <vector>
 
 namespace tinyclojure {
@@ -85,17 +106,6 @@ namespace tinyclojure {
     };
     
     /**
-     * a wrapper for Object* when exporting any object
-     *
-     * this helps the garbage collector keep track of root objects still exist
-     * TODO all objects exported from the TinyClojure should be exported via this
-     */
-    class ExportedObject {
-    public:
-    protected:
-    };
-            
-    /**
      * An object to represent the parser state
      *
      * construct it with the string to be parsed
@@ -162,7 +172,7 @@ namespace tinyclojure {
     class InterpreterScope {
     public:
         
-    protected;
+    protected:
         
     };
     
@@ -181,6 +191,11 @@ namespace tinyclojure {
     
     /**
      * a very simple garbage collector for TinyClojure objects
+     *
+     * TODO nothing is really implemented yet
+     *
+     * the ExportedObject is essentially a C++ reference counting mechanism to keep track of "root objects" ie objects being used in the real world
+     * when a garbage collection happens connectivity to these objects is the criteria for garbage collecting an object or not
      */
     class GarbageCollector {
     public:
@@ -192,8 +207,57 @@ namespace tinyclojure {
          */
         Object* registerObject(Object* object);
         
+        
+        /**
+         * increment the "root object" reference count for this Object
+         */
+        Object* retainRootObject(Object *object);
+        
+        /**
+         * decrement the "root object" reference count for this Object
+         */
+        Object* releaseRootObject(Object *object);
+        
+        /**
+         * call this to start a garbage collection run
+         */
+        void collectGarbage();
+        
     protected:
         std::set<Object*> _objects;
+        std::map<Object*, int> _rootObjects;
+    };
+    
+    /**
+     * a wrapper for Object* when exporting any object
+     *
+     * this helps the garbage collector keep track of root objects still exist
+     * DO NOT USE (read TODOs)
+     *
+     * TODO all objects exported from the TinyClojure should be exported via this
+     * TODO right the garbage collector this references will be destroyed before this object is destroyed, ideally the garbage collector should be reference counted
+     */
+    class ExportedObject {
+    public:
+        ExportedObject(GarbageCollector *gc, Object* ptr) : _gc(gc), _object(ptr) {
+            _gc->retainRootObject(_object);
+        }
+        
+        ~ExportedObject() {
+            _gc->releaseRootObject(_object);
+        }
+        
+        Object& operator* () {
+            return *_object;
+        }
+        
+        Object* operator-> () {
+            return _object;
+        }
+        
+    protected:
+        GarbageCollector *_gc;
+        Object *_object;
     };
     
     class TinyClojure {
