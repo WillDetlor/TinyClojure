@@ -157,6 +157,16 @@ namespace tinyclojure {
     };
     
     /**
+     * An object to represent the interpreter's state (probably more accurately, a single scope)
+     */
+    class InterpreterScope {
+    public:
+        
+    protected;
+        
+    };
+    
+    /**
      * Wrap a parser error to make it easy to throw an exception
      */
     class ParserError {
