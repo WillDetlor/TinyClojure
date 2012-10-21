@@ -20,6 +20,9 @@ void repl() {
         tinyclojure::Object *code = interpreter.parse(input);
         if (code) {
             std::cout << "I read: " << code->stringRepresentation() << std::endl;
+            
+            tinyclojure::Object *result = interpreter.eval(code);
+            std::cout << result->stringRepresentation() << std::endl;
         }
     } while (input.length());
 }

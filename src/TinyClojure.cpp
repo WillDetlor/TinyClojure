@@ -111,8 +111,11 @@ namespace tinyclojure {
                 if (buildList(elements) && expandList) {
                     stringBuilder << "`(";
                     for (int listIndex = 0; listIndex < elements.size(); ++listIndex) {
-                        stringBuilder   << elements[listIndex]->stringRepresentation(false)
-                                        << " ";
+                        stringBuilder << elements[listIndex]->stringRepresentation(false);
+                        
+                        if (listIndex < elements.size()-1) {
+                            stringBuilder << " ";
+                        }
                     }
                     stringBuilder << ")";
                 } else {
@@ -575,14 +578,21 @@ namespace tinyclojure {
                 return code;
                 break;
                 
-            case Object::kObjectTypeSymbol:
-                std::cout << "TODO implement Symbol translation" << std::endl;
-                return NULL;
-                break;
-                
+            case Object::kObjectTypeSymbol: {
+                Object *symbolValue = interpreterState.lookupSymbol(code->stringValue());
+                if (symbolValue) {
+                    return symbolValue;
+                } else {
+                    std::stringstream stringBuilder;
+                    stringBuilder << "Do not understand symbol " << code->stringValue();
+                    throw Error(stringBuilder.str());
+                }
+            } break;
+        
             case Object::kObjectTypeCons:
                 if (code->isList()) {
                     std::vector<Object*> elements;
+                    code->buildList(elements);
                     Object *identifierObject = elements[0];
                     elements.erase(elements.begin());   // elements now contains the arguments to the function
                     
@@ -602,7 +612,14 @@ namespace tinyclojure {
     
     Object* TinyClojure::eval(Object* code) {
         InterpreterScope interpreterState;
-        return recursiveEval(interpreterState, code);
+        
+        Object *ret = recursiveEval(interpreterState, code);
+        
+        if (ret==NULL) {
+            ret = _gc->registerObject(new Object());
+        }
+        
+        return ret;
     }
 
 #pragma mark -
