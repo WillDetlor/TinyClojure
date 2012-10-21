@@ -30,6 +30,16 @@
 #include <sstream>
 
 namespace tinyclojure {
+    
+#pragma mark -
+#pragma mark Standard Library
+    
+    namespace core {
+        /// function for adding two 
+        class Plus : public ExtensionFunction {
+            
+        };
+    }
 
 #pragma mark -
 #pragma mark Object
@@ -125,6 +135,25 @@ namespace tinyclojure {
         
         return stringBuilder.str();
     }
+
+    bool Object::isList(std::vector<Object*>& results) {
+        Object *currentObject = this;
+        
+        while (currentObject->_type == kObjectTypeCons) {
+            if (currentObject->pointer.consValue.right->_type == kObjectTypeCons) {
+                // this is a cons with a cons as its right value, continue the list
+                currentObject = currentObject->pointer.consValue.right;
+            } else if (currentObject->pointer.consValue.right->_type == kObjectTypeNil) {
+                // a nil terminator for the list
+                return true;
+            } else {
+                // this isn't a list
+                return false;
+            }
+        }
+        
+        return false;
+    }
     
     bool Object::buildList(std::vector<Object*>& results) {
         Object *currentObject = this;
@@ -139,9 +168,8 @@ namespace tinyclojure {
                 results.push_back(currentObject->pointer.consValue.left);
                 return true;
             } else {
-                // the list has ended
-                results.push_back(currentObject);
-                return true;
+                // this isn't a list
+                return false;
             }
         }
         
@@ -186,6 +214,10 @@ namespace tinyclojure {
     TinyClojure::~TinyClojure() {
         delete _ioProxy;
         delete _gc;
+    }
+    
+    void TinyClojure::addExtensionFunction(ExtensionFunction& function) {
+        _functionTable[function.functionName()] = function;
     }
     
     

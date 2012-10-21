@@ -93,6 +93,9 @@ namespace tinyclojure {
         
         /// build list, returning true and placing objects in the vector if it is a list, false otherwise
         bool buildList(std::vector<Object*>& results);
+
+        /// build list, returning true if it is a list, false otherwise
+        bool isList(std::vector<Object*>& results);
         
         /// build a string representation of the object
         std::string stringRepresentation(bool expandList=true);
@@ -106,6 +109,44 @@ namespace tinyclojure {
             } consValue;
             int integerValue;
         } pointer;
+    };
+    
+    /**
+     * An object to represent a function in an interpreter
+     *
+     * Subclassing this class is the primary mechanism for extending the interpreter
+     */
+    class ExtensionFunction {
+    public:
+        /// construct
+        ExtensionFunction() {
+            packArgumentTypes();
+        }
+        
+        /// the name of this function
+        std::string functionName() {
+            return std::string("");
+        }
+        
+        /// verify the passed argument list
+        bool verifyArgumentList(std::vector<Object*> arglist) {
+            // by default anything goes
+            return true;
+        }
+        
+        /// override this function to add the argument types to the 
+        void packArgumentTypes() {
+            
+        }
+        
+    protected:
+        void verifyArgumentListFromArgumentTypes(std::vector<Object*> arglist) {
+            for (int argumentIndex=0; argumentIndex<arglist.size(); ++argumentIndex) {
+                
+            }
+        }
+        
+        std::vector<Object::ObjectType> _argumentTypes;
     };
     
     /**
@@ -289,6 +330,9 @@ namespace tinyclojure {
          */
         ~TinyClojure();
         
+        /// add an extension function to the function table
+        void addExtensionFunction(ExtensionFunction& function);
+        
     protected:
         /// the IO proxy for this interpreter
         IOProxy *_ioProxy;
@@ -306,6 +350,9 @@ namespace tinyclojure {
         Object* recursiveParse(ParserState& parseState);
         
         std::string _newlineSet, _excludeSet, _numberSet;
+        
+        /// table of extension functions
+        std::map<std::string, ExtensionFunction> _functionTable;
     };
 }
 

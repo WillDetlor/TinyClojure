@@ -40,6 +40,7 @@ If you want to get involved, get in touch with me at slidetocode at gmail dot co
 * Garbage collector.  Right now there is no garbage collector to speak of.  Objects collect until the interpreter destructs, then they are deleted.
 * Parser rewrite.  I converted the parser from the tolerant parser used in Lisping.  It is neither elegant, nor an appropriate design.  I would like to replace it with something more elegant once this interpreter is up and running.
 * Implement all the Clojure.Core functions.
+* A more efficient structure.  TinyClojure converts code into Clojure data, then recursively evalutes it.  This eats stack space and it is not efficient either in terms of speed or memory.  A bytecode version would increase the size of the source code somewhat, but it would greatly increase efficiency.
 
 
 ### Coding conventions
