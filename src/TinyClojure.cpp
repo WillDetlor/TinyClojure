@@ -37,7 +37,30 @@ namespace tinyclojure {
     namespace core {
         /// function for adding a list of numbers
         class Plus : public ExtensionFunction {
+            std::string functionName() {
+                return std::string("+");
+            }
             
+            Object* execute(std::vector<Object*> arguments, Evaluator* evaluator, InterpreterScope* interpreterState, GarbageCollector* gc) {
+                int *values = new int[arguments.size()];
+                std::vector<Object*> evaluatedArguments;
+                for (int argumentIndex = 0; argumentIndex < arguments.size(); ++argumentIndex) {
+                    Object *evaluatedArgument = gc->registerObject(evaluator->recursiveEval(interpreterState, arguments[argumentIndex]));
+                    if (evaluatedArgument->type() != Object::kObjectTypeInteger) {
+                        throw Error("+ function requires all arguments to be numbers");
+                    }
+                    values[argumentIndex] = evaluatedArgument->integerValue();
+                }
+                
+                // I've separated this for easier refactoring to other arithmetic operations
+                int sum = 0;
+                for (int argumentIndex = 0; argumentIndex < arguments.size(); ++argumentIndex) {
+                    sum += values[argumentIndex];
+                }
+                delete[] values;
+
+                return gc->registerObject(new Object(sum));
+            }
         };
     }
 
@@ -212,17 +235,26 @@ namespace tinyclojure {
         _excludeSet.append("\"()[]{}';` ");
         
         _numberSet = std::string("0123456789");
+        
+        loadExtensionFunctions();
     }
     
     TinyClojure::~TinyClojure() {
+        for (std::map<std::string, ExtensionFunction*>::iterator it = _functionTable.begin(); it != _functionTable.end(); ++it) {
+            delete it->second;
+        }
+        
         delete _ioProxy;
         delete _gc;
     }
     
-    void TinyClojure::addExtensionFunction(ExtensionFunction& function) {
-        _functionTable[function.functionName()] = function;
+    void TinyClojure::addExtensionFunction(ExtensionFunction *function) {
+        _functionTable[function->functionName()] = function;
     }
     
+    void TinyClojure::loadExtensionFunctions() {
+        addExtensionFunction(new core::Plus());
+    }
     
 #pragma mark parser
     
@@ -567,7 +599,7 @@ namespace tinyclojure {
     
 #pragma mark evaluator
     
-    Object* TinyClojure::recursiveEval(InterpreterScope& interpreterState, Object *code) {
+    Object* TinyClojure::recursiveEval(InterpreterScope *interpreterState, Object *code) {
         switch (code->type()) {
             case Object::kObjectTypeNil:
                 return NULL;
@@ -579,7 +611,7 @@ namespace tinyclojure {
                 break;
                 
             case Object::kObjectTypeSymbol: {
-                Object *symbolValue = interpreterState.lookupSymbol(code->stringValue());
+                Object *symbolValue = interpreterState->lookupSymbol(code->stringValue());
                 if (symbolValue) {
                     return symbolValue;
                 } else {
@@ -597,12 +629,27 @@ namespace tinyclojure {
                     elements.erase(elements.begin());   // elements now contains the arguments to the function
                     
                     if (identifierObject->type()==Object::kObjectTypeSymbol) {
-                        
+                        std::map<std::string, ExtensionFunction*>::iterator it = _functionTable.find(identifierObject->stringValue());
+                        if (it == _functionTable.end()) {
+                            std::stringstream stringBuilder;
+                            stringBuilder << "Do not understand symbol " << code->stringValue() << " TODO, potentially it is user defined";
+                            throw Error(stringBuilder.str());
+                        } else {
+                            ExtensionFunction *function = it->second;
+                            
+                            Object *result = function->execute(elements, this, interpreterState, _gc);
+                            if (result==NULL) {
+                                result = _gc->registerObject(new Object());
+                            }
+                            
+                            return result;
+                        }
                     } else {
-                        
+                        throw Error("An executable S Expression should begin with an identifier");
                     }
                 } else {
-                    
+                    // I could be wrong, but I don't think this case makes any sense, most likely we got here cos of a flaw in buildList
+                    throw Error("An executable S Expression was not understood");
                 }
                 break;
         }
@@ -613,7 +660,7 @@ namespace tinyclojure {
     Object* TinyClojure::eval(Object* code) {
         InterpreterScope interpreterState;
         
-        Object *ret = recursiveEval(interpreterState, code);
+        Object *ret = recursiveEval(&interpreterState, code);
         
         if (ret==NULL) {
             ret = _gc->registerObject(new Object());

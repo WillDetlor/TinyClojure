@@ -111,44 +111,46 @@ namespace tinyclojure {
         } pointer;
     };
     
+    
     /**
-     * An object to represent a function in an interpreter
+     * a very simple garbage collector for TinyClojure objects
      *
-     * Subclassing this class is the primary mechanism for extending the interpreter
+     * TODO nothing is really implemented yet
+     *
+     * the ExportedObject is essentially a C++ reference counting mechanism to keep track of "root objects" ie objects being used in the real world
+     * when a garbage collection happens connectivity to these objects is the criteria for garbage collecting an object or not
      */
-    class ExtensionFunction {
+    class GarbageCollector {
     public:
-        /// construct
-        ExtensionFunction() {
-            packArgumentTypes();
-        }
+        GarbageCollector();
+        ~GarbageCollector();
         
-        /// the name of this function
-        std::string functionName() {
-            return std::string("");
-        }
+        /**
+         * register an object with the garbage collector
+         */
+        Object* registerObject(Object* object);
         
-        /// verify the passed argument list
-        bool verifyArgumentList(std::vector<Object*> arglist) {
-            // by default anything goes
-            return true;
-        }
         
-        /// override this function to add the argument types to the 
-        void packArgumentTypes() {
-            
-        }
+        /**
+         * increment the "root object" reference count for this Object
+         */
+        Object* retainRootObject(Object *object);
+        
+        /**
+         * decrement the "root object" reference count for this Object
+         */
+        Object* releaseRootObject(Object *object);
+        
+        /**
+         * call this to start a garbage collection run
+         */
+        void collectGarbage();
         
     protected:
-        void verifyArgumentListFromArgumentTypes(std::vector<Object*> arglist) {
-            for (int argumentIndex=0; argumentIndex<arglist.size(); ++argumentIndex) {
-                
-            }
-        }
-        
-        std::vector<Object::ObjectType> _argumentTypes;
+        std::set<Object*> _objects;
+        std::map<Object*, int> _rootObjects;
     };
-    
+        
     /**
      * An object to represent the parser state
      *
@@ -273,45 +275,6 @@ namespace tinyclojure {
     };
     
     /**
-     * a very simple garbage collector for TinyClojure objects
-     *
-     * TODO nothing is really implemented yet
-     *
-     * the ExportedObject is essentially a C++ reference counting mechanism to keep track of "root objects" ie objects being used in the real world
-     * when a garbage collection happens connectivity to these objects is the criteria for garbage collecting an object or not
-     */
-    class GarbageCollector {
-    public:
-        GarbageCollector();
-        ~GarbageCollector();
-        
-        /**
-         * register an object with the garbage collector
-         */
-        Object* registerObject(Object* object);
-        
-        
-        /**
-         * increment the "root object" reference count for this Object
-         */
-        Object* retainRootObject(Object *object);
-        
-        /**
-         * decrement the "root object" reference count for this Object
-         */
-        Object* releaseRootObject(Object *object);
-        
-        /**
-         * call this to start a garbage collection run
-         */
-        void collectGarbage();
-        
-    protected:
-        std::set<Object*> _objects;
-        std::map<Object*, int> _rootObjects;
-    };
-    
-    /**
      * a wrapper for Object* when exporting any object
      *
      * this helps the garbage collector keep track of root objects still exist
@@ -343,7 +306,32 @@ namespace tinyclojure {
         Object *_object;
     };
     
-    class TinyClojure {
+    /**
+     * an abstract base class so that TinyClojure can provide callbacks to the ExtensionFunction objects
+     */
+    class Evaluator {
+    public:
+        /// the internal recursive evaluator, see eval for documentations
+        virtual Object* recursiveEval(InterpreterScope *interpreterState, Object *code) = 0;
+    };
+    
+    /**
+     * An abstract base class for all interpreter functions
+     *
+     * Subclassing this class is the primary mechanism for extending the interpreter
+     */
+    class ExtensionFunction {
+    public:        
+        /// the name of this function
+        virtual std::string functionName() { return std::string(""); };
+        
+        /// the meat of the function happens in here, pass arguments and what it needs to evaluate
+        virtual Object* execute(std::vector<Object*> arguments, Evaluator* evaluator, InterpreterScope* interpreterState, GarbageCollector* gc) {
+            return NULL;
+        }
+    };
+    
+    class TinyClojure : Evaluator {
     public:
         /**
          * parse the passed string, returning the parsed objects, or NULL on error
@@ -370,7 +358,13 @@ namespace tinyclojure {
         ~TinyClojure();
         
         /// add an extension function to the function table
-        void addExtensionFunction(ExtensionFunction& function);
+        void addExtensionFunction(ExtensionFunction *function);
+        
+        /// call this to load all extension functions, override it to change which functions are loaded
+        virtual void loadExtensionFunctions();
+        
+        /// the internal recursive evaluator, see eval for documentations
+        Object* recursiveEval(InterpreterScope *interpreterState, Object *code);
         
     protected:
         /// the IO proxy for this interpreter
@@ -388,13 +382,10 @@ namespace tinyclojure {
         /// the internal recursive parser function, see parse for documentation
         Object* recursiveParse(ParserState& parseState);
         
-        /// the internal recursive evaluator, see eval for documentations
-        Object* recursiveEval(InterpreterScope& interpreterState, Object *code);
-        
         std::string _newlineSet, _excludeSet, _numberSet;
         
         /// table of extension functions
-        std::map<std::string, ExtensionFunction> _functionTable;
+        std::map<std::string, ExtensionFunction*> _functionTable;
     };
 }
 
