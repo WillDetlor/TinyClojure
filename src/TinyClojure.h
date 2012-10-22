@@ -66,6 +66,7 @@ namespace tinyclojure {
             kObjectTypeCons,
             kObjectTypeNil,
             kObjectTypeInteger,
+            kObjectTypeBoolean,
         } ObjectType;
         
         /// construct either a symbol (if symbol=true) or a string object otherwise
@@ -73,6 +74,9 @@ namespace tinyclojure {
         
         /// construct a nil object
         Object();
+        
+        /// construct a boolean object
+        Object(bool boolValue);
         
         /// construct an integer object
         Object(int intValue);
@@ -91,6 +95,12 @@ namespace tinyclojure {
         /// return a reference to this object as an integer value
         int& integerValue();
         
+        /// return a reference to this object as a boolean value
+        bool& booleanValue();
+        
+        /// this coerces whatever we have into a boolean
+        bool isTrue();
+        
         /// build list, returning true and placing objects in the vector if it is a list, false otherwise
         bool buildList(std::vector<Object*>& results);
 
@@ -108,6 +118,7 @@ namespace tinyclojure {
                 Object *left, *right;
             } consValue;
             int integerValue;
+            bool booleanValue;
         } pointer;
     };
     

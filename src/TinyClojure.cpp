@@ -36,30 +36,93 @@ namespace tinyclojure {
     
     namespace core {
         /// function for adding a list of numbers
-        class Plus : public ExtensionFunction {
-            std::string functionName() {
-                return std::string("+");
+        class Arithmetic : public ExtensionFunction {
+            virtual double floatOperation(double lhs, double rhs) {
+                return 0;
+            }
+
+            virtual int integerOperation(int lhs, int rhs) {
+                return 0;
             }
             
             Object* execute(std::vector<Object*> arguments, Evaluator* evaluator, InterpreterScope* interpreterState, GarbageCollector* gc) {
+                if (arguments.size()==0) {
+                    throw Error("Arithmetic functions require at least one argument");
+                }
+
                 int *values = new int[arguments.size()];
                 std::vector<Object*> evaluatedArguments;
                 for (int argumentIndex = 0; argumentIndex < arguments.size(); ++argumentIndex) {
                     Object *evaluatedArgument = gc->registerObject(evaluator->recursiveEval(interpreterState, arguments[argumentIndex]));
                     if (evaluatedArgument->type() != Object::kObjectTypeInteger) {
-                        throw Error("+ function requires all arguments to be numbers");
+                        throw Error("Arithmetic functions require all arguments to be numbers");
                     }
                     values[argumentIndex] = evaluatedArgument->integerValue();
                 }
                 
-                // I've separated this for easier refactoring to other arithmetic operations
-                int sum = 0;
-                for (int argumentIndex = 0; argumentIndex < arguments.size(); ++argumentIndex) {
-                    sum += values[argumentIndex];
+                int current = values[0];
+                for (int argumentIndex = 1; argumentIndex < arguments.size(); ++argumentIndex) {
+                    current = integerOperation(current, values[argumentIndex]);
                 }
                 delete[] values;
 
-                return gc->registerObject(new Object(sum));
+                return gc->registerObject(new Object(current));
+            }
+        };
+        
+        class Plus : public Arithmetic {
+            std::string functionName() {
+                return std::string("+");
+            }
+            
+            virtual double floatOperation(double lhs, double rhs) {
+                return lhs + rhs;
+            }
+            
+            virtual int integerOperation(int lhs, int rhs) {
+                return lhs + rhs;
+            }
+        };
+        
+        class Minus : public Arithmetic {
+            std::string functionName() {
+                return std::string("-");
+            }
+            
+            virtual double floatOperation(double lhs, double rhs) {
+                return lhs - rhs;
+            }
+            
+            virtual int integerOperation(int lhs, int rhs) {
+                return lhs - rhs;
+            }
+        };
+        
+        class Multiply : public Arithmetic {
+            std::string functionName() {
+                return std::string("*");
+            }
+            
+            virtual double floatOperation(double lhs, double rhs) {
+                return lhs * rhs;
+            }
+            
+            virtual int integerOperation(int lhs, int rhs) {
+                return lhs * rhs;
+            }
+        };
+        
+        class Divide  : public Arithmetic {
+            std::string functionName() {
+                return std::string("/");
+            }
+            
+            virtual double floatOperation(double lhs, double rhs) {
+                return lhs / rhs;
+            }
+            
+            virtual int integerOperation(int lhs, int rhs) {
+                return lhs / rhs;
             }
         };
     }
@@ -97,6 +160,11 @@ namespace tinyclojure {
         }
     }
     
+    Object::Object(bool boolValue) {
+        _type = kObjectTypeBoolean;
+        pointer.booleanValue = boolValue;
+    }
+    
     Object::Object(int value) {
         _type = kObjectTypeInteger;
         pointer.integerValue = value;
@@ -126,6 +194,14 @@ namespace tinyclojure {
                 
             case kObjectTypeInteger:
                 stringBuilder << pointer.integerValue;
+                break;
+                
+            case kObjectTypeBoolean:
+                if (pointer.booleanValue) {
+                    stringBuilder << "true";
+                } else {
+                    stringBuilder << "false";
+                }
                 break;
                 
             case kObjectTypeCons: {
@@ -254,6 +330,9 @@ namespace tinyclojure {
     
     void TinyClojure::loadExtensionFunctions() {
         addExtensionFunction(new core::Plus());
+        addExtensionFunction(new core::Minus());
+        addExtensionFunction(new core::Multiply());
+        addExtensionFunction(new core::Divide());
     }
     
 #pragma mark parser
