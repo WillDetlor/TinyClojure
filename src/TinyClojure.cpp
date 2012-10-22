@@ -154,6 +154,7 @@ namespace tinyclojure {
             case kObjectTypeCons:
                 // it isn't our business deleting "unused" objects, that is for the GC
             case kObjectTypeInteger:
+            case kObjectTypeBoolean:
             case kObjectTypeNil:
                 // nothing need be done
                 break;
@@ -686,6 +687,7 @@ namespace tinyclojure {
                 
             case Object::kObjectTypeInteger:
             case Object::kObjectTypeString:
+            case Object::kObjectTypeBoolean:
                 return code;
                 break;
                 
