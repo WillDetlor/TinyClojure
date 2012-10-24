@@ -169,22 +169,17 @@ namespace tinyclojure {
             }
             
             Object *execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
-                Object *lhs = arguments[0];
+                Object *lhs = _evaluator->recursiveEval(interpreterState, arguments[0]);
                 
                 for (int argumentIndex = 1; argumentIndex < arguments.size(); ++argumentIndex) {
-                    Object *rhs = arguments[argumentIndex];
+                    Object *rhs = _evaluator->recursiveEval(interpreterState, arguments[argumentIndex]);
                     
-                    if (!compareObjects(lhs, rhs)) {
+                    if (*lhs!=*rhs) {
                         return _gc->registerObject(new Object(false));
                     }
                 }
                 
                 return _gc->registerObject(new Object(true));
-            }
-            
-        protected:
-            bool compareObjects(Object *lhs, Object *rhs) {
-                return true;
             }
         };
     }
@@ -221,6 +216,44 @@ namespace tinyclojure {
                 // nothing need be done
                 break;
         }
+    }
+    
+    bool Object::operator==(const Object& rhs) {
+        if (type() != rhs.type()) {
+            return false;
+        }
+        
+        switch (_type) {
+            case kObjectTypeBoolean:
+                return pointer.booleanValue == rhs.pointer.booleanValue;
+                break;
+                
+            case kObjectTypeInteger:
+                return pointer.integerValue == rhs.pointer.integerValue;
+                break;
+                
+            case kObjectTypeNil:
+                // execution would never actually make it here
+                return true;
+                break;
+ 
+            case kObjectTypeSymbol:
+            case kObjectTypeString:
+                return *pointer.stringValue == *rhs.pointer.stringValue;
+                break;
+                
+            case kObjectTypeCons:
+                // recursively evaluate ==, NB lhs equality should return more quickly than rhs equality
+                if (*pointer.consValue.left != *rhs.pointer.consValue.left) {
+                    return false;
+                }
+                return *pointer.consValue.right != *rhs.pointer.consValue.right;
+                break;
+        }
+    }
+    
+    bool Object::operator!=(const Object& rhs) {
+        return !operator==(rhs);
     }
     
     Object::Object(bool boolValue) {

@@ -87,7 +87,13 @@ namespace tinyclojure {
         ~Object();
         
         /// this object's type
-        ObjectType type() { return _type; }
+        ObjectType type() const { return _type; }
+        
+        /// negated equality operator
+        bool operator!=(const Object& rhs);
+        
+        /// equality operator
+        bool operator==(const Object& rhs);
         
         /// return a reference to this object as a string value
         std::string& stringValue();
