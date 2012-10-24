@@ -349,6 +349,33 @@ namespace tinyclojure {
             _evaluator = evaluator;
         }
         
+        /**
+         * required number of arguments to this function
+         *
+         * return -1 if there is no restriction
+         */
+        virtual int requiredNumberOfArguments() {
+            return -1;
+        }
+        
+        /**
+         * this function requires a number of arguments <= the return value of this function
+         *
+         * return -1 if there is no restriction
+         */
+        virtual int minimumNumberOfArguments() {
+            return requiredNumberOfArguments();
+        }
+        
+        /**
+         * this function requires number of arguments >= the return value of this function
+         *
+         * return -1 if there is no restriction
+         */
+        virtual int maximumNumberOfArguments() {
+            return requiredNumberOfArguments();
+        }
+        
     protected:
         GarbageCollector *_gc;
         Evaluator *_evaluator;

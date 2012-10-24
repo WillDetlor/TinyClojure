@@ -45,11 +45,11 @@ namespace tinyclojure {
                 return 0;
             }
             
+            int minimumNumberOfArguments() {
+                return 1;
+            }
+            
             Object* execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
-                if (arguments.size()==0) {
-                    throw Error("Arithmetic functions require at least one argument");
-                }
-
                 int *values = new int[arguments.size()];
                 std::vector<Object*> evaluatedArguments;
                 for (int argumentIndex = 0; argumentIndex < arguments.size(); ++argumentIndex) {
@@ -131,11 +131,15 @@ namespace tinyclojure {
                 return std::string("if");
             }
             
+            int minimumNumberOfArguments() {
+                return 2;
+            }
+            
+            int maximumNumberOfArguments() {
+                return 3;
+            }
+            
             Object *execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
-                if (!(arguments.size()==3 || arguments.size()==2)) {
-                    throw Error("If function requires two or three arguments");
-                }
-                
                 Object  *condition = arguments[0],
                         *trueBranch = arguments[1],
                         *falseBranch = NULL;
@@ -775,6 +779,37 @@ namespace tinyclojure {
                             throw Error(stringBuilder.str());
                         } else {
                             ExtensionFunction *function = it->second;
+                            
+                            int minArgs = function->minimumNumberOfArguments(),
+                                maxArgs = function->maximumNumberOfArguments();
+                            
+                            if (minArgs>=0) {
+                                if (elements.size() <= minArgs) {
+                                    std::stringstream stringBuilder;
+                                    stringBuilder   << "Function "
+                                                    << function->functionName()
+                                                    << " requires at least "
+                                                    << minArgs
+                                                    << " arguments"
+                                                    << std::endl;
+                                    
+                                    throw Error(stringBuilder.str());
+                                }
+                            }
+                            
+                            if (maxArgs>=0) {
+                                if (elements.size() >= maxArgs) {
+                                    std::stringstream stringBuilder;
+                                    stringBuilder   << "Function "
+                                                    << function->functionName()
+                                                    << " requires no more than "
+                                                    << maxArgs
+                                                    << " arguments"
+                                                    << std::endl;
+                                    
+                                    throw Error(stringBuilder.str());
+                                }
+                            }
                             
                             Object *result = function->execute(elements, interpreterState);
                             if (result==NULL) {

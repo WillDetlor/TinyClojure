@@ -17,23 +17,23 @@ void repl() {
     do {
         std::cout << "> ";
         std::getline(std::cin, input, '\n');
-        tinyclojure::Object *code = interpreter.parse(input);
-        if (code) {
-            std::cout << "I read: " << code->stringRepresentation() << std::endl;
-            
-            tinyclojure::Object *result = interpreter.eval(code);
-            std::cout << result->stringRepresentation() << std::endl;
+
+        try {
+            tinyclojure::Object *code = interpreter.parse(input);
+            if (code) {
+//                std::cout << "I read: " << code->stringRepresentation() << std::endl;
+                
+                tinyclojure::Object *result = interpreter.eval(code);
+                std::cout << result->stringRepresentation() << std::endl;
+            }
+        } catch (tinyclojure::Error error) {
+            std::cout << error.position << ": " << error.message << std::endl << std::endl;
         }
     } while (input.length());
 }
 
 int main(int argc, const char * argv[]) {
-    try {
-        repl();
-    } catch (tinyclojure::Error error) {
-        std::cout << error.position << ": " << error.message << std::endl;
-        return 1;
-    }
+    repl();
     
     return 0;
 }
