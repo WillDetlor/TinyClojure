@@ -15,7 +15,8 @@ Easily.
 
     tinyclojure::TinyClojure interpreter;
     tinyclojure::Object* code = interpreter.parse("(+ 1 2)");
-    interpreter.eval(code);
+    tinyclojure::Object* result = interpreter.eval(code);
+    std::cout << result->integerValue();
     
 All objects are garbage collected by the interpreter itself, so there is no need to delete them.
 

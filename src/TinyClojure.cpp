@@ -125,6 +125,35 @@ namespace tinyclojure {
                 return lhs / rhs;
             }
         };
+        
+        class If : public ExtensionFunction {
+            std::string functionName() {
+                return std::string("if");
+            }
+            
+            Object *execute(std::vector<Object*> arguments, Evaluator* evaluator, InterpreterScope* interpreterState, GarbageCollector* gc) {
+                if (!(arguments.size()==3 || arguments.size()==2)) {
+                    throw Error("If function requires two or three arguments");
+                }
+                
+                Object  *condition = arguments[0],
+                        *trueBranch = arguments[1],
+                        *falseBranch = NULL;
+                
+                if (arguments.size()==3) {
+                    falseBranch = arguments[2];
+                } else {
+                    falseBranch = gc->registerObject(new Object());
+                }
+                
+                Object *evaluatedCondition = evaluator->recursiveEval(interpreterState, condition);
+                if (evaluatedCondition->coerceBoolean()) {
+                    return evaluator->recursiveEval(interpreterState, trueBranch);
+                } else {
+                    return evaluator->recursiveEval(interpreterState, falseBranch);
+                }
+            }
+        };
     }
 
 #pragma mark -
@@ -183,6 +212,31 @@ namespace tinyclojure {
     
     int& Object::integerValue() {
         return pointer.integerValue;
+    }
+    
+    bool& Object::booleanValue() {
+        return pointer.booleanValue;
+    }
+    
+    bool Object::coerceBoolean() {
+        switch (_type) {                
+            case kObjectTypeInteger:
+                return integerValue()!=0;
+                break;
+                
+            case kObjectTypeBoolean:
+                return booleanValue();
+                break;
+                
+            case kObjectTypeNil:
+                return false;
+                break;
+                
+            default:
+                // any object other than nil should be considered true
+                return true;
+                break;
+        }
     }
     
     std::string Object::stringRepresentation(bool expandList) {
@@ -334,6 +388,7 @@ namespace tinyclojure {
         addExtensionFunction(new core::Minus());
         addExtensionFunction(new core::Multiply());
         addExtensionFunction(new core::Divide());
+        addExtensionFunction(new core::If());
     }
     
 #pragma mark parser

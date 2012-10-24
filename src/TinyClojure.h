@@ -99,7 +99,7 @@ namespace tinyclojure {
         bool& booleanValue();
         
         /// this coerces whatever we have into a boolean
-        bool isTrue();
+        bool coerceBoolean();
         
         /// build list, returning true and placing objects in the vector if it is a list, false otherwise
         bool buildList(std::vector<Object*>& results);
