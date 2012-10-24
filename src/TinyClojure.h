@@ -337,9 +337,21 @@ namespace tinyclojure {
         virtual std::string functionName() { return std::string(""); };
         
         /// the meat of the function happens in here, pass arguments and what it needs to evaluate
-        virtual Object* execute(std::vector<Object*> arguments, Evaluator* evaluator, InterpreterScope* interpreterState, GarbageCollector* gc) {
+        virtual Object* execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
             return NULL;
         }
+        
+        void setGarbageCollector(GarbageCollector *gc) {
+            _gc = gc;
+        }
+        
+        void setEvaluator(Evaluator *evaluator) {
+            _evaluator = evaluator;
+        }
+        
+    protected:
+        GarbageCollector *_gc;
+        Evaluator *_evaluator;
     };
     
     class TinyClojure : Evaluator {

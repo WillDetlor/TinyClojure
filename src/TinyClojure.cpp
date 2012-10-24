@@ -45,7 +45,7 @@ namespace tinyclojure {
                 return 0;
             }
             
-            Object* execute(std::vector<Object*> arguments, Evaluator* evaluator, InterpreterScope* interpreterState, GarbageCollector* gc) {
+            Object* execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
                 if (arguments.size()==0) {
                     throw Error("Arithmetic functions require at least one argument");
                 }
@@ -53,7 +53,7 @@ namespace tinyclojure {
                 int *values = new int[arguments.size()];
                 std::vector<Object*> evaluatedArguments;
                 for (int argumentIndex = 0; argumentIndex < arguments.size(); ++argumentIndex) {
-                    Object *evaluatedArgument = gc->registerObject(evaluator->recursiveEval(interpreterState, arguments[argumentIndex]));
+                    Object *evaluatedArgument = _gc->registerObject(_evaluator->recursiveEval(interpreterState, arguments[argumentIndex]));
                     if (evaluatedArgument->type() != Object::kObjectTypeInteger) {
                         throw Error("Arithmetic functions require all arguments to be numbers");
                     }
@@ -66,7 +66,7 @@ namespace tinyclojure {
                 }
                 delete[] values;
 
-                return gc->registerObject(new Object(current));
+                return _gc->registerObject(new Object(current));
             }
         };
         
@@ -131,7 +131,7 @@ namespace tinyclojure {
                 return std::string("if");
             }
             
-            Object *execute(std::vector<Object*> arguments, Evaluator* evaluator, InterpreterScope* interpreterState, GarbageCollector* gc) {
+            Object *execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
                 if (!(arguments.size()==3 || arguments.size()==2)) {
                     throw Error("If function requires two or three arguments");
                 }
@@ -143,14 +143,14 @@ namespace tinyclojure {
                 if (arguments.size()==3) {
                     falseBranch = arguments[2];
                 } else {
-                    falseBranch = gc->registerObject(new Object());
+                    falseBranch = _gc->registerObject(new Object());
                 }
                 
-                Object *evaluatedCondition = evaluator->recursiveEval(interpreterState, condition);
+                Object *evaluatedCondition = _evaluator->recursiveEval(interpreterState, condition);
                 if (evaluatedCondition->coerceBoolean()) {
-                    return evaluator->recursiveEval(interpreterState, trueBranch);
+                    return _evaluator->recursiveEval(interpreterState, trueBranch);
                 } else {
-                    return evaluator->recursiveEval(interpreterState, falseBranch);
+                    return _evaluator->recursiveEval(interpreterState, falseBranch);
                 }
             }
         };
@@ -380,6 +380,9 @@ namespace tinyclojure {
     }
     
     void TinyClojure::addExtensionFunction(ExtensionFunction *function) {
+        function->setEvaluator(this);
+        function->setGarbageCollector(_gc);
+        
         _functionTable[function->functionName()] = function;
     }
     
@@ -773,7 +776,7 @@ namespace tinyclojure {
                         } else {
                             ExtensionFunction *function = it->second;
                             
-                            Object *result = function->execute(elements, this, interpreterState, _gc);
+                            Object *result = function->execute(elements, interpreterState);
                             if (result==NULL) {
                                 result = _gc->registerObject(new Object());
                             }
