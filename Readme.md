@@ -37,7 +37,12 @@ Ostensibly Clojure, I would say ClojureScript, but when I last looked, ClojureSc
 
 If you want to get involved, get in touch with me at slidetocode at gmail dot com.  Forks and pull requests are a good thing.  The current TODO list is
 
-* Right now, the interpreter is "in progress", and it really just needs to get started
+Right now, the interpreter is "in progress", and it really just needs to get started, personal TODOs
+
+* implement floats
+* create new scopes when necessary
+
+
 * Garbage collector.  Right now there is no garbage collector to speak of.  Objects collect until the interpreter destructs, then they are deleted.
 * Parser rewrite.  I converted the parser from the tolerant parser used in Lisping.  It is neither elegant, nor an appropriate design.  I would like to replace it with something more elegant once this interpreter is up and running.
 * Implement all the Clojure.Core functions.

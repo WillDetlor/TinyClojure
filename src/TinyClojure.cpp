@@ -182,6 +182,54 @@ namespace tinyclojure {
                 return _gc->registerObject(new Object(true));
             }
         };
+        
+        class List : public ExtensionFunction {
+            std::string functionName() {
+                return std::string("list");
+            }
+            
+            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+                std::vector<Object*> evaluatedArguments;
+                for (int argumentIndex=0; argumentIndex<arguments.size(); ++argumentIndex) {
+                    evaluatedArguments.push_back(_evaluator->recursiveEval(interpreterState, arguments[argumentIndex]));
+                }
+                
+                Object *null = _gc->registerObject(new Object());
+
+                if (arguments.size()==0) {
+                    return _gc->registerObject(new Object(null,null));
+                } else if (arguments.size()==1) {
+                    return _gc->registerObject(new Object(evaluatedArguments[0],null));
+                } else {
+                    Object *rhs = null;
+                    
+                    for (long argumentIndex = evaluatedArguments.size()-1; argumentIndex >= 0; --argumentIndex) {
+                        Object *lhs = evaluatedArguments[argumentIndex];
+                        
+                        rhs = _gc->registerObject(new Object(lhs, rhs));
+                    }
+                    
+                    return rhs;
+                }
+            }
+        };
+        
+        class Cons : public ExtensionFunction {
+            std::string functionName() {
+                return std::string("cons");
+            }
+            
+            int requiredNumberOfArguments() {
+                return 2;
+            }
+            
+            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+                Object  *lhs = _evaluator->recursiveEval(interpreterState, arguments[0]),
+                        *rhs = _evaluator->recursiveEval(interpreterState, arguments[1]);
+                
+                return _gc->registerObject(new Object(lhs, rhs));
+            }
+        };
     }
 
 #pragma mark -
@@ -233,7 +281,6 @@ namespace tinyclojure {
                 break;
                 
             case kObjectTypeNil:
-                // execution would never actually make it here
                 return true;
                 break;
  
@@ -247,7 +294,7 @@ namespace tinyclojure {
                 if (*pointer.consValue.left != *rhs.pointer.consValue.left) {
                     return false;
                 }
-                return *pointer.consValue.right != *rhs.pointer.consValue.right;
+                return *pointer.consValue.right == *rhs.pointer.consValue.right;
                 break;
         }
     }
@@ -459,6 +506,8 @@ namespace tinyclojure {
         addExtensionFunction(new core::Divide());
         addExtensionFunction(new core::If());
         addExtensionFunction(new core::Equality());
+        addExtensionFunction(new core::Cons());
+        addExtensionFunction(new core::List());
     }
     
 #pragma mark parser
@@ -778,11 +827,13 @@ namespace tinyclojure {
                         // inline comment element
                         return recursiveParse(parseState);
                     } else {
-                        // test for a boolean value
+                        // check for known symbol names
                         if (identifier == "true") {
                             return _gc->registerObject(new Object(true));
                         } else if (identifier == "false") {
                             return _gc->registerObject(new Object(false));
+                        } else if (identifier == "nil") {
+                            return _gc->registerObject(new Object());
                         }
                         
                         // TODO test for number properly (ie decimals)
@@ -812,9 +863,6 @@ namespace tinyclojure {
     Object* TinyClojure::recursiveEval(InterpreterScope *interpreterState, Object *code) {
         switch (code->type()) {
             case Object::kObjectTypeNil:
-                return NULL;
-                break;
-                
             case Object::kObjectTypeInteger:
             case Object::kObjectTypeString:
             case Object::kObjectTypeBoolean:
