@@ -325,6 +325,45 @@ namespace tinyclojure {
                 return NULL;
             }
         };
+        
+        class Def : public ExtensionFunction {
+            std::string functionName() {
+                return "def";
+            }
+            
+            int requiredNumberOfArguments() {
+                return 2;
+            }
+            
+            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+                Object  *symbol = arguments[0],
+                        *value = _evaluator->recursiveEval(interpreterState, arguments[1]);
+                
+                if (symbol->type()!=Object::kObjectTypeSymbol) {
+                    throw Error("first argument to def must be a symbol");
+                }
+                
+                interpreterState->setSymbolInScope(symbol->stringValue(), value);
+                
+                return _gc->registerObject(new Object());
+            }
+        };
+        
+        class Do : public ExtensionFunction {
+            std::string functionName() {
+                return "do";
+            }
+            
+            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+                Object  *retValue = _gc->registerObject(new Object());
+                
+                for (int argumentIndex = 0; argumentIndex < arguments.size(); ++argumentIndex) {
+                    retValue = _evaluator->recursiveEval(interpreterState, arguments[argumentIndex]);
+                }
+                
+                return retValue;
+            }
+        };
     }
 
 #pragma mark -
@@ -609,6 +648,8 @@ namespace tinyclojure {
         addExtensionFunction(new core::GreaterThan);
         addExtensionFunction(new core::GreaterThanOrEqual);
         addExtensionFunction(new core::Print());
+        addExtensionFunction(new core::Def);
+        addExtensionFunction(new core::Do);
     }
     
 #pragma mark parser

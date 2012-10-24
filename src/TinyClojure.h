@@ -244,6 +244,11 @@ namespace tinyclojure {
             
         }
         
+        /// set the symbol in this scope
+        void setSymbolInScope(std::string symbolName, Object *objectValue) {
+            _symbolTable[symbolName] = objectValue;
+        }
+        
         /// return the symbol or NULL
         Object *lookupSymbolInScope(std::string symbolName) {
             std::map<std::string, Object*>::iterator it = _symbolTable.find(symbolName);

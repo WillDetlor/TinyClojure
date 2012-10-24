@@ -39,8 +39,9 @@ If you want to get involved, get in touch with me at slidetocode at gmail dot co
 
 Right now, the interpreter is "in progress", and it really just needs to get started, personal TODOs
 
+* fix def
+* implement scopes
 * implement floats
-* create new scopes when necessary
 
 
 * Garbage collector.  Right now there is no garbage collector to speak of.  Objects collect until the interpreter destructs, then they are deleted.
