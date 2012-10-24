@@ -992,7 +992,9 @@ namespace tinyclojure {
                         std::map<std::string, ExtensionFunction*>::iterator it = _functionTable.find(identifierObject->stringValue());
                         if (it == _functionTable.end()) {
                             std::stringstream stringBuilder;
-                            stringBuilder << "Do not understand symbol " << code->stringValue() << " TODO, potentially it is user defined";
+                            stringBuilder   << "Do not understand symbol "
+                                            << identifierObject->stringValue()
+                                            << " TODO, potentially it is user defined";
                             throw Error(stringBuilder.str());
                         } else {
                             ExtensionFunction *function = it->second;
