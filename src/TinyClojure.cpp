@@ -158,6 +158,35 @@ namespace tinyclojure {
                 }
             }
         };
+        
+        class Equality : public ExtensionFunction {
+            std::string functionName() {
+                return std::string("=");
+            }
+            
+            int minimumNumberOfArguments() {
+                return 1;
+            }
+            
+            Object *execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
+                Object *lhs = arguments[0];
+                
+                for (int argumentIndex = 1; argumentIndex < arguments.size(); ++argumentIndex) {
+                    Object *rhs = arguments[argumentIndex];
+                    
+                    if (!compareObjects(lhs, rhs)) {
+                        return _gc->registerObject(new Object(false));
+                    }
+                }
+                
+                return _gc->registerObject(new Object(true));
+            }
+            
+        protected:
+            bool compareObjects(Object *lhs, Object *rhs) {
+                return true;
+            }
+        };
     }
 
 #pragma mark -
@@ -396,6 +425,7 @@ namespace tinyclojure {
         addExtensionFunction(new core::Multiply());
         addExtensionFunction(new core::Divide());
         addExtensionFunction(new core::If());
+        addExtensionFunction(new core::Equality());
     }
     
 #pragma mark parser
@@ -715,7 +745,12 @@ namespace tinyclojure {
                         // inline comment element
                         return recursiveParse(parseState);
                     } else {
-                        // standard text, ie a symbol
+                        // test for a boolean value
+                        if (identifier == "true") {
+                            return _gc->registerObject(new Object(true));
+                        } else if (identifier == "false") {
+                            return _gc->registerObject(new Object(false));
+                        }
                         
                         // TODO test for number properly (ie decimals)
                         bool isInteger = true;
@@ -784,7 +819,7 @@ namespace tinyclojure {
                                 maxArgs = function->maximumNumberOfArguments();
                             
                             if (minArgs>=0) {
-                                if (elements.size() <= minArgs) {
+                                if (elements.size() < minArgs) {
                                     std::stringstream stringBuilder;
                                     stringBuilder   << "Function "
                                                     << function->functionName()
@@ -798,7 +833,7 @@ namespace tinyclojure {
                             }
                             
                             if (maxArgs>=0) {
-                                if (elements.size() >= maxArgs) {
+                                if (elements.size() > maxArgs) {
                                     std::stringstream stringBuilder;
                                     stringBuilder   << "Function "
                                                     << function->functionName()
