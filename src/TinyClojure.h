@@ -340,7 +340,7 @@ namespace tinyclojure {
     class ExtensionFunction {
     public:        
         /// the name of this function
-        virtual std::string functionName() { return std::string(""); };
+        virtual std::string functionName() { return ""; };
         
         /// the meat of the function happens in here, pass arguments and what it needs to evaluate
         virtual Object* execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
@@ -353,6 +353,10 @@ namespace tinyclojure {
         
         void setEvaluator(Evaluator *evaluator) {
             _evaluator = evaluator;
+        }
+        
+        void setIOProxy(IOProxy *ioProxy) {
+            _ioProxy = ioProxy;
         }
         
         /**
@@ -385,6 +389,7 @@ namespace tinyclojure {
     protected:
         GarbageCollector *_gc;
         Evaluator *_evaluator;
+        IOProxy *_ioProxy;
     };
     
     class TinyClojure : Evaluator {

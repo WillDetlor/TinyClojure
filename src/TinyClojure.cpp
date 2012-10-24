@@ -86,7 +86,7 @@ namespace tinyclojure {
         
         class Minus : public Arithmetic {
             std::string functionName() {
-                return std::string("-");
+                return "-";
             }
             
             virtual double floatOperation(double lhs, double rhs) {
@@ -100,7 +100,7 @@ namespace tinyclojure {
         
         class Multiply : public Arithmetic {
             std::string functionName() {
-                return std::string("*");
+                return "*";
             }
             
             virtual double floatOperation(double lhs, double rhs) {
@@ -114,7 +114,7 @@ namespace tinyclojure {
         
         class Divide  : public Arithmetic {
             std::string functionName() {
-                return std::string("/");
+                return "/";
             }
             
             virtual double floatOperation(double lhs, double rhs) {
@@ -128,7 +128,7 @@ namespace tinyclojure {
         
         class If : public ExtensionFunction {
             std::string functionName() {
-                return std::string("if");
+                return "if";
             }
             
             int minimumNumberOfArguments() {
@@ -161,7 +161,7 @@ namespace tinyclojure {
         
         class Equality : public ExtensionFunction {
             std::string functionName() {
-                return std::string("=");
+                return "=";
             }
             
             int minimumNumberOfArguments() {
@@ -183,9 +183,85 @@ namespace tinyclojure {
             }
         };
         
+        class NumericInequality : public ExtensionFunction {
+            Object *execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
+                std::vector<Object*> evaluatedArguments;
+                for (int argumentIndex=0; argumentIndex<arguments.size(); ++argumentIndex) {
+                    evaluatedArguments.push_back(_evaluator->recursiveEval(interpreterState, arguments[argumentIndex]));
+                    
+                    if (evaluatedArguments.back()->type() != Object::kObjectTypeInteger) {
+                        std::stringstream stringBuilder;
+                        
+                        stringBuilder   << "Arguments to "
+                                        << functionName()
+                                        << " must all be numeric";
+                        
+                        throw Error(stringBuilder.str());
+                    }
+                }
+
+                Object *lhs = _evaluator->recursiveEval(interpreterState, arguments[0]);
+                
+                for (int argumentIndex = 1; argumentIndex < arguments.size(); ++argumentIndex) {
+                    Object *rhs = _evaluator->recursiveEval(interpreterState, arguments[argumentIndex]);
+                    
+                    if (!comparison(lhs->integerValue(), rhs->integerValue())) {
+                        return _gc->registerObject(new Object(false));
+                    }
+                }
+                
+                return _gc->registerObject(new Object(true));
+            }
+            
+        protected:
+            bool comparison(int lhs, int rhs) {
+                return true;
+            }
+        };
+        
+        class LessThan : public ExtensionFunction {
+            std::string functionName() {
+                return "<";
+            }
+            
+            bool comparison(int lhs, int rhs) {
+                return lhs < rhs;
+            }
+        };
+
+        class GreaterThan : public ExtensionFunction {
+            std::string functionName() {
+                return ">";
+            }
+            
+            bool comparison(int lhs, int rhs) {
+                return lhs > rhs;
+            }
+        };
+
+        class LessThanOrEqual : public ExtensionFunction {
+            std::string functionName() {
+                return "<=";
+            }
+            
+            bool comparison(int lhs, int rhs) {
+                return lhs <= rhs;
+            }
+        };
+
+        class GreaterThanOrEqual : public ExtensionFunction {
+            std::string functionName() {
+                return ">=";
+            }
+            
+            bool comparison(int lhs, int rhs) {
+                return lhs >= rhs;
+            }
+        };
+        
         class List : public ExtensionFunction {
             std::string functionName() {
-                return std::string("list");
+                return "list";
             }
             
             Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
@@ -216,7 +292,7 @@ namespace tinyclojure {
         
         class Cons : public ExtensionFunction {
             std::string functionName() {
-                return std::string("cons");
+                return "cons";
             }
             
             int requiredNumberOfArguments() {
@@ -228,6 +304,25 @@ namespace tinyclojure {
                         *rhs = _evaluator->recursiveEval(interpreterState, arguments[1]);
                 
                 return _gc->registerObject(new Object(lhs, rhs));
+            }
+        };
+        
+        class Print : public ExtensionFunction {
+            std::string functionName() {
+                return "print";
+            }
+            
+            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+                for (int argumentIndex=0; argumentIndex<arguments.size(); ++argumentIndex) {
+                    Object *evaluatedArgument = _evaluator->recursiveEval(interpreterState, arguments[argumentIndex]);
+                    
+                    std::string thisArgument = evaluatedArgument->stringRepresentation();
+                    
+                    _ioProxy->writeOut(thisArgument);
+                    _ioProxy->writeOut("\n");
+                }
+                
+                return NULL;
             }
         };
     }
@@ -495,6 +590,7 @@ namespace tinyclojure {
     void TinyClojure::addExtensionFunction(ExtensionFunction *function) {
         function->setEvaluator(this);
         function->setGarbageCollector(_gc);
+        function->setIOProxy(_ioProxy);
         
         _functionTable[function->functionName()] = function;
     }
@@ -508,6 +604,11 @@ namespace tinyclojure {
         addExtensionFunction(new core::Equality());
         addExtensionFunction(new core::Cons());
         addExtensionFunction(new core::List());
+        addExtensionFunction(new core::LessThan);
+        addExtensionFunction(new core::LessThanOrEqual);
+        addExtensionFunction(new core::GreaterThan);
+        addExtensionFunction(new core::GreaterThanOrEqual);
+        addExtensionFunction(new core::Print());
     }
     
 #pragma mark parser
