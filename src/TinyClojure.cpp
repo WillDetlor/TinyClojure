@@ -365,6 +365,37 @@ namespace tinyclojure {
             }
         };
     }
+    
+#pragma mark -
+#pragma mark InterpreterScope
+    
+    Object* InterpreterScope::lookupSymbolInScope(std::string symbolName) {
+        std::map<std::string, Object*>::iterator it = _symbolTable.find(symbolName);
+        
+        if (it == _symbolTable.end()) {
+            return NULL;
+        } else {
+            return it->second;
+        }
+    }
+    
+    void InterpreterScope::setSymbolInScope(std::string symbolName, Object *objectValue) {
+        _symbolTable[symbolName] = objectValue;
+    }
+    
+    Object* InterpreterScope::lookupSymbol(std::string symbolName) {
+        Object *ret = lookupSymbolInScope(symbolName);
+        if (ret) {
+            return ret;
+        } else {
+            if (_parentScope) {
+                return _parentScope->lookupSymbol(symbolName);
+            } else {
+                return NULL;
+            }
+        }
+    }
+
 
 #pragma mark -
 #pragma mark Object
