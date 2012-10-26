@@ -67,6 +67,7 @@ namespace tinyclojure {
             kObjectTypeNil,
             kObjectTypeInteger,
             kObjectTypeBoolean,
+            kObjectTypeVector,
         } ObjectType;
         
         /// construct either a symbol (if symbol=true) or a string object otherwise
@@ -83,7 +84,11 @@ namespace tinyclojure {
         
         /// construct a pair
         Object(Object *left, Object *right);
-                
+        
+        /// construct a vector
+        Object(std::vector<Object*> objects);
+        
+        
         ~Object();
         
         /// this object's type
@@ -97,6 +102,9 @@ namespace tinyclojure {
         
         /// return a reference to this object as a string value
         std::string& stringValue();
+        
+        /// return a reference to this object as a vector
+        std::vector<Object*>& vectorValue();
         
         /// return a reference to this object as an integer value
         int& integerValue();
@@ -123,6 +131,7 @@ namespace tinyclojure {
             struct {
                 Object *left, *right;
             } consValue;
+            std::vector<Object*>* vectorPointer;
             int integerValue;
             bool booleanValue;
         } pointer;

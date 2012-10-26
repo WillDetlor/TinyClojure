@@ -259,6 +259,20 @@ namespace tinyclojure {
             }
         };
         
+        class Vector : public ExtensionFunction {
+            std::string functionName() {
+                return "vector";
+            }
+            
+            Object* execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+                std::vector<Object*> evaluatedArguments;
+                for (int argumentIndex=0; argumentIndex<arguments.size(); ++argumentIndex) {
+                    evaluatedArguments.push_back(_evaluator->recursiveEval(interpreterState, arguments[argumentIndex]));
+                }
+                return _gc->registerObject(new Object(evaluatedArguments));
+            }
+        };
+        
         class List : public ExtensionFunction {
             std::string functionName() {
                 return "list";
@@ -287,6 +301,28 @@ namespace tinyclojure {
                     
                     return rhs;
                 }
+            }
+        };
+        
+        class Fn : public ExtensionFunction {
+            std::string functionName() {
+                return "fn";
+            }
+            
+            int minimumNumberOfArguments() {
+                return 2;
+            }
+            
+            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+                Object * arglist = arguments[0];
+                
+                // remove the initial argument, just leaving the function body
+                arguments.erase(arguments.begin());
+                
+                // now run through the lambda capturing the objects
+                std::vector<Object*> transformedArguments;
+                
+                return _gc->registerObject(new Object(0));
             }
         };
         
@@ -420,6 +456,10 @@ namespace tinyclojure {
             case kObjectTypeString:
                 delete pointer.stringValue;
                 break;
+                
+            case kObjectTypeVector:
+                delete pointer.vectorPointer;
+                break;
             
             case kObjectTypeCons:
                 // it isn't our business deleting "unused" objects, that is for the GC
@@ -447,6 +487,20 @@ namespace tinyclojure {
                 
             case kObjectTypeNil:
                 return true;
+                break;
+                
+            case kObjectTypeVector:
+                if (pointer.vectorPointer->size() == rhs.pointer.vectorPointer->size()) {
+                    for (int elementIndex=0; elementIndex < pointer.vectorPointer->size(); ++elementIndex) {
+                        if (*(pointer.vectorPointer->at(elementIndex)) != *(rhs.pointer.vectorPointer->at(elementIndex))) {
+                            return false;
+                        }
+                        
+                    }
+                    return true;
+                } else {
+                    return false;
+                }
                 break;
  
             case kObjectTypeSymbol:
@@ -483,9 +537,18 @@ namespace tinyclojure {
         pointer.consValue.left = left;
         pointer.consValue.right = right;
     }
-        
+    
+    Object::Object(std::vector<Object*> objects) {
+        _type = kObjectTypeVector;
+        pointer.vectorPointer = new std::vector<Object*>(objects);
+    }
+    
     std::string& Object::stringValue() {
         return *pointer.stringValue;
+    }
+    
+    std::vector<Object*>& Object::vectorValue() {
+        return *pointer.vectorPointer;
     }
     
     int& Object::integerValue() {
@@ -527,6 +590,17 @@ namespace tinyclojure {
                 
             case kObjectTypeInteger:
                 stringBuilder << pointer.integerValue;
+                break;
+                
+            case kObjectTypeVector:
+                stringBuilder << "[";
+                for (int elementIndex=0; elementIndex<vectorValue().size(); ++elementIndex) {
+                    if (elementIndex) {
+                        stringBuilder << " ";
+                    }
+                    stringBuilder << pointer.vectorPointer->at(elementIndex)->stringRepresentation();
+                }
+                stringBuilder << "]";
                 break;
                 
             case kObjectTypeBoolean:
@@ -683,6 +757,8 @@ namespace tinyclojure {
         addExtensionFunction(new core::Print());
         addExtensionFunction(new core::Def);
         addExtensionFunction(new core::Do);
+        addExtensionFunction(new core::Vector);
+        addExtensionFunction(new core:Fn);
     }
     
     void TinyClojure::resetInterpreter() {
@@ -1049,6 +1125,16 @@ namespace tinyclojure {
                 return code;
                 break;
                 
+            case Object::kObjectTypeVector: {
+                std::vector<Object*> elements;
+                
+                for (int elementIndex=0; elementIndex<code->vectorValue().size(); ++elementIndex) {
+                    elements[elementIndex] = recursiveEval(interpreterState, code->vectorValue()[elementIndex]);
+                }
+                
+                return _gc->registerObject(new Object(elements));
+                } break;
+        
             case Object::kObjectTypeSymbol: {
                 Object *symbolValue = interpreterState->lookupSymbol(code->stringValue());
                 if (symbolValue) {
