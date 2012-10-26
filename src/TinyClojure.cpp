@@ -319,7 +319,33 @@ namespace tinyclojure {
                 // remove the initial argument, just leaving the function body
                 arguments.erase(arguments.begin());
                 
-                // now run through the lambda capturing the objects
+                // construct the argument list
+                std::vector<Object*> parameterSymbols, argumentSymbols;
+                bool validArgumentList = false;
+                if (arglist->buildList(parameterSymbols)) {
+                    if (parameterSymbols.size()) {
+                        if (parameterSymbols[0]->type()==Object::kObjectTypeSymbol) {
+                            if (parameterSymbols[0]->stringValue()=="vector") {
+                                validArgumentList = true;
+                                
+                                // grab each individual argument
+                                for (int argumentIndex=1; argumentIndex < parameterSymbols.size(); ++argumentIndex) {
+                                    if (parameterSymbols[argumentIndex]->type() == Object::kObjectTypeSymbol) {
+                                        argumentSymbols.push_back(parameterSymbols[argumentIndex]);
+                                    } else {
+                                        validArgumentList = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (!validArgumentList) {
+                    throw Error("Could not build argument list");
+                }
+                
+                // recurse through the lambda capturing the local state
                 std::vector<Object*> transformedArguments;
                 
                 return _gc->registerObject(new Object(0));
@@ -758,7 +784,7 @@ namespace tinyclojure {
         addExtensionFunction(new core::Def);
         addExtensionFunction(new core::Do);
         addExtensionFunction(new core::Vector);
-        addExtensionFunction(new core:Fn);
+        addExtensionFunction(new core::Fn);
     }
     
     void TinyClojure::resetInterpreter() {
