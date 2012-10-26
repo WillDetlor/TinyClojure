@@ -637,6 +637,7 @@ namespace tinyclojure {
         _ioProxy = new IOProxy();
         _gc = new GarbageCollector();
         _newlineSet = std::string("\n\r");
+        _baseScope = new InterpreterScope();
         
         for (char excludeChar = 1; excludeChar<32; ++excludeChar) {
             _excludeSet.append(&excludeChar, 1);
@@ -653,6 +654,7 @@ namespace tinyclojure {
             delete it->second;
         }
         
+        delete _baseScope;
         delete _ioProxy;
         delete _gc;
     }
@@ -681,6 +683,11 @@ namespace tinyclojure {
         addExtensionFunction(new core::Print());
         addExtensionFunction(new core::Def);
         addExtensionFunction(new core::Do);
+    }
+    
+    void TinyClojure::resetInterpreter() {
+        delete _baseScope;
+        _baseScope = new InterpreterScope();
     }
     
 #pragma mark parser
@@ -1123,9 +1130,7 @@ namespace tinyclojure {
     }
     
     Object* TinyClojure::eval(Object* code) {
-        InterpreterScope interpreterState;
-        
-        Object *ret = recursiveEval(&interpreterState, code);
+        Object *ret = recursiveEval(_baseScope, code);
         
         if (ret==NULL) {
             ret = _gc->registerObject(new Object());

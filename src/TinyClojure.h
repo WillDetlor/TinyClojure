@@ -412,6 +412,9 @@ namespace tinyclojure {
         /// the internal recursive evaluator, see eval for documentations
         Object* recursiveEval(InterpreterScope *interpreterState, Object *code);
         
+        /// this erases the persistent scope, removing all symbols and objects
+        void resetInterpreter();
+        
     protected:
         /// the IO proxy for this interpreter
         IOProxy *_ioProxy;
@@ -423,6 +426,10 @@ namespace tinyclojure {
          */
         Object* listObject(std::vector<Object*> list);
         
+        /// the base scope owned by this object and persistent between evaluations
+        InterpreterScope *_baseScope;
+        
+        /// the shared garbage collector
         GarbageCollector *_gc;
         
         /// the internal recursive parser function, see parse for documentation
