@@ -345,8 +345,7 @@ namespace tinyclojure {
                     throw Error("Could not build argument list");
                 }
                 
-                // recurse through the lambda capturing the local state
-                std::vector<Object*> transformedArguments;
+                // TODO recurse through the lambda capturing the local state
                 
                 return _gc->registerObject(new Object(0));
             }
@@ -476,6 +475,11 @@ namespace tinyclojure {
         }
     }
     
+    Object::Object(Object *code) {
+        _type = kObjectTypeFunction;
+        pointer.objectPointer = code;
+    }
+    
     Object::~Object() {
         switch (_type) {
             case kObjectTypeSymbol:
@@ -488,6 +492,7 @@ namespace tinyclojure {
                 break;
             
             case kObjectTypeCons:
+            case kObjectTypeFunction:
                 // it isn't our business deleting "unused" objects, that is for the GC
             case kObjectTypeInteger:
             case kObjectTypeBoolean:
@@ -527,6 +532,10 @@ namespace tinyclojure {
                 } else {
                     return false;
                 }
+                break;
+                
+            case kObjectTypeFunction:
+                return *pointer.objectPointer == *rhs.pointer.objectPointer;
                 break;
  
             case kObjectTypeSymbol:
@@ -610,6 +619,12 @@ namespace tinyclojure {
         std::stringstream stringBuilder;
         
         switch (_type) {
+            case kObjectTypeFunction:
+                stringBuilder   << "<<<fn "
+                                << pointer.objectPointer->stringRepresentation()
+                                << ">>>";
+                break;
+                
             case kObjectTypeString:
                 stringBuilder << '"' << *pointer.stringValue << '"';
                 break;
@@ -1149,6 +1164,11 @@ namespace tinyclojure {
             case Object::kObjectTypeString:
             case Object::kObjectTypeBoolean:
                 return code;
+                break;
+                
+            case Object::kObjectTypeFunction:
+                // TODO 
+                return _gc->registerObject(new Object());
                 break;
                 
             case Object::kObjectTypeVector: {
