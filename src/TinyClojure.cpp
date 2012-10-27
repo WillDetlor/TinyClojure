@@ -303,54 +303,7 @@ namespace tinyclojure {
                 }
             }
         };
-        
-        class Fn : public ExtensionFunction {
-            std::string functionName() {
-                return "fn";
-            }
-            
-            int minimumNumberOfArguments() {
-                return 2;
-            }
-            
-            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
-                Object * arglist = arguments[0];
                 
-                // remove the initial argument, just leaving the function body
-                arguments.erase(arguments.begin());
-                
-                // construct the argument list
-                std::vector<Object*> parameterSymbols, argumentSymbols;
-                bool validArgumentList = false;
-                if (arglist->buildList(parameterSymbols)) {
-                    if (parameterSymbols.size()) {
-                        if (parameterSymbols[0]->type()==Object::kObjectTypeSymbol) {
-                            if (parameterSymbols[0]->stringValue()=="vector") {
-                                validArgumentList = true;
-                                
-                                // grab each individual argument
-                                for (int argumentIndex=1; argumentIndex < parameterSymbols.size(); ++argumentIndex) {
-                                    if (parameterSymbols[argumentIndex]->type() == Object::kObjectTypeSymbol) {
-                                        argumentSymbols.push_back(parameterSymbols[argumentIndex]);
-                                    } else {
-                                        validArgumentList = false;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                if (!validArgumentList) {
-                    throw Error("Could not build argument list");
-                }
-                
-                // TODO recurse through the lambda capturing the local state
-                
-                return _gc->registerObject(new Object(0));
-            }
-        };
-        
         class Cons : public ExtensionFunction {
             std::string functionName() {
                 return "cons";
@@ -425,6 +378,56 @@ namespace tinyclojure {
                 return retValue;
             }
         };
+        
+        class Fn : public ExtensionFunction {
+            std::string functionName() {
+                return "fn";
+            }
+            
+            int minimumNumberOfArguments() {
+                return 2;
+            }
+            
+            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+                Object * arglist = arguments[0];
+                
+                // remove the initial argument, just leaving the function body
+                arguments.erase(arguments.begin());
+                
+                // construct the argument list
+                std::vector<Object*> parameterSymbols, argumentSymbols;
+                bool validArgumentList = false;
+                if (arglist->buildList(parameterSymbols)) {
+                    if (parameterSymbols.size()) {
+                        if (parameterSymbols[0]->type()==Object::kObjectTypeSymbol) {
+                            if (parameterSymbols[0]->stringValue()=="vector") {
+                                validArgumentList = true;
+                                
+                                // remove the leading "vector" symbol
+                                parameterSymbols.erase(parameterSymbols.begin());
+                                
+                                // grab each individual argument
+                                for (int argumentIndex=1; argumentIndex < parameterSymbols.size(); ++argumentIndex) {
+                                    if (parameterSymbols[argumentIndex]->type() == Object::kObjectTypeSymbol) {
+                                        argumentSymbols.push_back(parameterSymbols[argumentIndex]);
+                                    } else {
+                                        validArgumentList = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (!validArgumentList) {
+                    throw Error("Could not build argument list");
+                }
+                
+                // TODO recurse through the lambda capturing the local state
+                
+                return _gc->registerObject(new Object(arguments[0], parameterSymbols));
+            }
+        };
     }
     
 #pragma mark -
@@ -440,8 +443,8 @@ namespace tinyclojure {
         }
     }
     
-    void InterpreterScope::setSymbolInScope(std::string symbolName, Object *objectValue) {
-        _symbolTable[symbolName] = objectValue;
+    void InterpreterScope::setSymbolInScope(std::string symbolName, Object *functionValue) {
+        _symbolTable[symbolName] = functionValue;
     }
     
     Object* InterpreterScope::lookupSymbol(std::string symbolName) {
@@ -475,9 +478,10 @@ namespace tinyclojure {
         }
     }
     
-    Object::Object(Object *code) {
+    Object::Object(Object *code, std::vector<Object*> arguments) {
         _type = kObjectTypeFunction;
-        pointer.objectPointer = code;
+        pointer.functionValue.objectPointer = code;
+        pointer.functionValue.argumentSymbols = new std::vector<Object*>(arguments);
     }
     
     Object::~Object() {
@@ -491,8 +495,12 @@ namespace tinyclojure {
                 delete pointer.vectorPointer;
                 break;
             
-            case kObjectTypeCons:
             case kObjectTypeFunction:
+                // leave the object to the gc
+                delete pointer.functionValue.argumentSymbols;
+                break;
+                
+            case kObjectTypeCons:
                 // it isn't our business deleting "unused" objects, that is for the GC
             case kObjectTypeInteger:
             case kObjectTypeBoolean:
@@ -535,14 +543,14 @@ namespace tinyclojure {
                 break;
                 
             case kObjectTypeFunction:
-                return *pointer.objectPointer == *rhs.pointer.objectPointer;
+                return *pointer.functionValue.objectPointer == *rhs.pointer.functionValue.objectPointer;
                 break;
  
             case kObjectTypeSymbol:
             case kObjectTypeString:
                 return *pointer.stringValue == *rhs.pointer.stringValue;
                 break;
-                
+            
             case kObjectTypeCons:
                 // recursively evaluate ==, NB lhs equality should return more quickly than rhs equality
                 if (*pointer.consValue.left != *rhs.pointer.consValue.left) {
@@ -555,6 +563,14 @@ namespace tinyclojure {
     
     bool Object::operator!=(const Object& rhs) {
         return !operator==(rhs);
+    }
+    
+    Object*& Object::functionValueCode() {
+        return pointer.functionValue.objectPointer;
+    }
+    
+    std::vector<Object*>& Object::functionValueParameters() {
+        return *pointer.functionValue.argumentSymbols;
     }
     
     Object::Object(bool boolValue) {
@@ -621,7 +637,7 @@ namespace tinyclojure {
         switch (_type) {
             case kObjectTypeFunction:
                 stringBuilder   << "<<<fn "
-                                << pointer.objectPointer->stringRepresentation()
+                                << pointer.functionValue.objectPointer->stringRepresentation()
                                 << ">>>";
                 break;
                 
@@ -1163,12 +1179,8 @@ namespace tinyclojure {
             case Object::kObjectTypeInteger:
             case Object::kObjectTypeString:
             case Object::kObjectTypeBoolean:
-                return code;
-                break;
-                
             case Object::kObjectTypeFunction:
-                // TODO 
-                return _gc->registerObject(new Object());
+                return code;
                 break;
                 
             case Object::kObjectTypeVector: {
@@ -1187,7 +1199,7 @@ namespace tinyclojure {
                     return symbolValue;
                 } else {
                     std::stringstream stringBuilder;
-                    stringBuilder << "Do not understand symbol " << code->stringValue();
+                    stringBuilder << "I do not understand the symbol " << code->stringValue();
                     throw Error(stringBuilder.str());
                 }
             } break;
@@ -1196,7 +1208,17 @@ namespace tinyclojure {
                 if (code->isList()) {
                     std::vector<Object*> elements;
                     code->buildList(elements);
-                    Object *identifierObject = elements[0];
+                    
+                    Object *identifierObject;
+                    
+                    // TODO this will become unnecessary when builtin functions are defined as code, just like user functions
+                    try {
+                        identifierObject = recursiveEval(interpreterState, elements[0]);
+                    } catch (Error e) {
+                        identifierObject = elements[0];
+                    }
+                    
+                    
                     elements.erase(elements.begin());   // elements now contains the arguments to the function
                     
                     if (identifierObject->type()==Object::kObjectTypeSymbol) {
@@ -1204,8 +1226,7 @@ namespace tinyclojure {
                         if (it == _functionTable.end()) {
                             std::stringstream stringBuilder;
                             stringBuilder   << "Do not understand symbol "
-                                            << identifierObject->stringValue()
-                                            << " TODO, potentially it is user defined";
+                                            << identifierObject->stringValue();
                             throw Error(stringBuilder.str());
                         } else {
                             ExtensionFunction *function = it->second;
@@ -1248,6 +1269,24 @@ namespace tinyclojure {
                             
                             return result;
                         }
+                    } else if (identifierObject->type()==Object::kObjectTypeFunction) {
+                        if (identifierObject->functionValueParameters().size()!=elements.size()) {
+                            std::stringstream stringBuilder;
+                            stringBuilder   << "Function requires "
+                                            << elements.size()
+                                            << " arguments"
+                                            << std::endl;
+                                            
+                            throw Error(stringBuilder.str());
+                        }
+                        
+                        // build a new scope containing the passed arguments
+                        InterpreterScope functionScope(interpreterState);
+                        for (int parameterIndex=0; parameterIndex<identifierObject->functionValueParameters().size(); ++parameterIndex) {
+                            functionScope.setSymbolInScope(identifierObject->functionValueParameters()[parameterIndex]->stringValue(), elements[parameterIndex]);
+                        }
+                        
+                        return recursiveEval(&functionScope, identifierObject->functionValueCode());
                     } else {
                         throw Error("An executable S Expression should begin with an identifier");
                     }
@@ -1258,7 +1297,7 @@ namespace tinyclojure {
                 break;
         }
         
-        return NULL;        
+        return NULL;
     }
     
     Object* TinyClojure::eval(Object* code) {

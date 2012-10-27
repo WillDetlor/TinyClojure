@@ -90,7 +90,7 @@ namespace tinyclojure {
         Object(std::vector<Object*> objects);
         
         /// construct a function
-        Object(Object *code);
+        Object(Object *code, std::vector<Object*> arguments);
         
         ~Object();
         
@@ -108,6 +108,12 @@ namespace tinyclojure {
         
         /// return a reference to this object as a vector
         std::vector<Object*>& vectorValue();
+        
+        /// accessor for code part of function value
+        Object*& functionValueCode();
+        
+        /// accessor for parameter list part of function value
+        std::vector<Object*>& functionValueParameters();
         
         /// return a reference to this object as an integer value
         int& integerValue();
@@ -131,15 +137,20 @@ namespace tinyclojure {
         ObjectType _type;
         union {
             std::string* stringValue;
+            
             struct {
                 Object *left, *right;
             } consValue;
-//            struct {
+            
+            struct {
                 Object *objectPointer;
-//                std::vector<Object*> argumentSymbols;
-//            } objectValue;
+                std::vector<Object*>* argumentSymbols;
+            } functionValue;
+            
             std::vector<Object*>* vectorPointer;
+            
             int integerValue;
+            
             bool booleanValue;
         } pointer;
     };
@@ -261,7 +272,7 @@ namespace tinyclojure {
         }
         
         /// set the symbol in this scope
-        void setSymbolInScope(std::string symbolName, Object *objectValue);
+        void setSymbolInScope(std::string symbolName, Object *functionValue);
         
         /// return the symbol or NULL
         Object *lookupSymbolInScope(std::string symbolName);
