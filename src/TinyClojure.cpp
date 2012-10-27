@@ -146,6 +146,22 @@ namespace tinyclojure {
         _value.integer = val;
         _mode = kNumberModeInteger;
     }
+    
+    std::string Number::stringRepresentation() const {
+        std::stringstream stringBuilder;
+        
+        switch (_mode) {
+            case kNumberModeFloating:
+                stringBuilder << _value.floating;
+                break;
+                
+            case kNumberModeInteger:
+                stringBuilder << _value.integer;
+                break;
+        }
+        
+        return stringBuilder.str();
+    }
 
     
 #pragma mark -

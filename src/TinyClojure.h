@@ -58,7 +58,9 @@ namespace tinyclojure {
         Number operator*(const Number& rhs) const;
         Number operator/(const Number& rhs) const;
         Number operator-(const Number& rhs) const;
-        
+
+        /// return a string representation of this number
+        std::string stringRepresentation() const;
     protected:
         static void equivalentModes(const Number& originalLHS, const Number& originalRHS, Number& newLHS, Number& newRHS);
         void setFloating(double val);
