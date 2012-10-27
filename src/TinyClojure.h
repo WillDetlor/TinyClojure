@@ -33,9 +33,44 @@
 #include <string>
 #include <set>
 #include <map>
+#include <cmath>
 #include <vector>
 
 namespace tinyclojure {
+    /**
+     * A fancy number class to implement Clojure's numeric tower
+     */
+    class Number {
+    public:
+        typedef enum {
+            kNumberModeInteger,
+            kNumberModeFloating,
+        } NumberMode;
+        
+        Number(double val);
+        Number(int val);
+        Number();
+        double floatingValue() const;
+        Number floatingVersion() const;
+        int integerValue() const;
+        Number integerVersion() const;
+        Number operator+(const Number& rhs) const;
+        Number operator*(const Number& rhs) const;
+        Number operator/(const Number& rhs) const;
+        Number operator-(const Number& rhs) const;
+        
+    protected:
+        static void equivalentModes(const Number& originalLHS, const Number& originalRHS, Number& newLHS, Number& newRHS);
+        void setFloating(double val);
+        void setInteger(int val);
+                
+        union {
+            int integer;
+            double floating;
+        } _value;
+        NumberMode _mode;
+    };
+    
     /**
      * A class/interface for the interpreters IO
      *

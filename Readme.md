@@ -40,10 +40,11 @@ If you want to get involved, get in touch with me at slidetocode at gmail dot co
 Right now, the interpreter is "in progress", and it really just needs to get started, personal TODOs
 
 * variable argument lists to fn
-* number class to wrap all modes of numbers
 * implement scopes
 
-
+* full numeric stack.  Only cater for integers and floats right now
+* Test suite.  This is sadly lacking right now.
+* refactoring.  C++ is not my "first language" in the programming world, so any refactors to make it more idiomatic would be appreciated.
 * Garbage collector.  Right now there is no garbage collector to speak of.  Objects collect until the interpreter destructs, then they are deleted.
 * Parser rewrite.  I converted the parser from the tolerant parser used in Lisping.  It is neither elegant, nor an appropriate design.  I would like to replace it with something more elegant once this interpreter is up and running.
 * Implement all the Clojure.Core functions.

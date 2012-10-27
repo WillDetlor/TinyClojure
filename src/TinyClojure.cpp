@@ -30,6 +30,123 @@
 #include <sstream>
 
 namespace tinyclojure {
+
+#pragma mark -
+#pragma mark Number
+    
+    Number::Number(double val) {
+        setFloating(val);
+    }
+    
+    Number::Number(int val) {
+        setInteger(val);
+    }
+    
+    Number::Number() {
+        setInteger(0);
+    }
+    
+    double Number::floatingValue() const {
+        switch (_mode) {
+            case kNumberModeFloating:
+                return _value.floating;
+                break;
+                
+            case kNumberModeInteger:
+                return (double)_value.integer;
+                break;
+        }
+    }
+    
+    Number Number::floatingVersion() const {
+        return Number(floatingValue());
+    }
+    
+    int Number::integerValue() const {
+        switch (_mode) {
+            case kNumberModeInteger:
+                return _value.integer;
+                break;
+                
+            case kNumberModeFloating:
+                return (int)std::round(_value.floating);
+                break;
+        }
+    }
+    
+    Number Number::integerVersion() const {
+        return Number(floatingValue());
+    }
+    
+    Number Number::operator+(const Number& rhs) const {
+        Number ilhs,irhs;
+        equivalentModes(*this, rhs, ilhs, irhs);
+        
+        switch (ilhs._mode) {
+            case kNumberModeFloating:
+                return Number(ilhs._value.floating + irhs._value.floating);
+                break;
+                
+            case kNumberModeInteger:
+                return Number(ilhs._value.integer + irhs._value.integer);
+                break;
+        }
+    }
+    
+    Number Number::operator*(const Number& rhs) const {
+        Number ilhs,irhs;
+        equivalentModes(*this, rhs, ilhs, irhs);
+        
+        switch (ilhs._mode) {
+            case kNumberModeFloating:
+                return Number(ilhs._value.floating * irhs._value.floating);
+                break;
+                
+            case kNumberModeInteger:
+                return Number(ilhs._value.integer * irhs._value.integer);
+                break;
+        }
+    }
+    
+    Number Number::operator/(const Number& rhs) const {
+        return Number(floatingValue() / rhs.floatingValue());
+    }
+    
+    Number Number::operator-(const Number& rhs) const {
+        Number ilhs,irhs;
+        equivalentModes(*this, rhs, ilhs, irhs);
+        
+        switch (ilhs._mode) {
+            case kNumberModeFloating:
+                return Number(ilhs._value.floating - irhs._value.floating);
+                break;
+                
+            case kNumberModeInteger:
+                return Number(ilhs._value.integer - irhs._value.integer);
+                break;
+        }
+    }
+
+    void Number::equivalentModes(const Number& originalLHS, const Number& originalRHS, Number& newLHS, Number& newRHS) {
+        if (originalLHS._mode==originalRHS._mode) {
+            newLHS=originalLHS;
+            newRHS=originalRHS;
+        } else {
+            newLHS = originalLHS.floatingVersion();
+            newRHS = originalRHS.floatingVersion();
+        }
+    }
+    
+    void Number::setFloating(double val) {
+        _value.floating = val;
+        _mode = kNumberModeFloating;
+    }
+    
+    void Number::setInteger(int val) {
+        _value.integer = val;
+        _mode = kNumberModeInteger;
+    }
+
     
 #pragma mark -
 #pragma mark Standard Library
