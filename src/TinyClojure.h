@@ -58,6 +58,14 @@ namespace tinyclojure {
         Number operator*(const Number& rhs) const;
         Number operator/(const Number& rhs) const;
         Number operator-(const Number& rhs) const;
+        
+        bool operator==(const Number& rhs) const;
+        bool operator!=(const Number& rhs) const;
+        bool operator<(const Number& rhs) const;
+        bool operator>(const Number& rhs) const;
+        bool operator<=(const Number& rhs) const;
+        bool operator>=(const Number& rhs) const;
+        
 
         /// return a string representation of this number
         std::string stringRepresentation() const;
@@ -102,7 +110,7 @@ namespace tinyclojure {
             kObjectTypeSymbol,
             kObjectTypeCons,
             kObjectTypeNil,
-            kObjectTypeInteger,
+            kObjectTypeNumber,
             kObjectTypeBoolean,
             kObjectTypeVector,
             kObjectTypeFunction,
@@ -117,8 +125,14 @@ namespace tinyclojure {
         /// construct a boolean object
         Object(bool boolValue);
         
-        /// construct an integer object
+        /// construct an integer number object
         Object(int intValue);
+
+        /// construct an floating point number object
+        Object(double doubleValue);
+        
+        /// construct a number object
+        Object(Number numberValue);
         
         /// construct a pair
         Object(Object *left, Object *right);
@@ -153,7 +167,7 @@ namespace tinyclojure {
         std::vector<Object*>& functionValueParameters();
         
         /// return a reference to this object as an integer value
-        int& integerValue();
+        Number& numberValue();
         
         /// return a reference to this object as a boolean value
         bool& booleanValue();
@@ -186,7 +200,7 @@ namespace tinyclojure {
             
             std::vector<Object*>* vectorPointer;
             
-            int integerValue;
+            Number *numberPointer;
             
             bool booleanValue;
         } pointer;

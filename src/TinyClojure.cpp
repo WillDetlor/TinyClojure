@@ -163,6 +163,84 @@ namespace tinyclojure {
         return stringBuilder.str();
     }
 
+    bool Number::operator==(const Number& rhs) const {
+        Number ilhs,irhs;
+        equivalentModes(*this, rhs, ilhs, irhs);
+        
+        switch (ilhs._mode) {
+            case kNumberModeFloating:
+                return ilhs._value.floating == irhs._value.floating;
+                break;
+                
+            case kNumberModeInteger:
+                return ilhs._value.integer == irhs._value.integer;
+                break;
+        }
+    }
+    
+    bool Number::operator<(const Number& rhs) const {
+        Number ilhs,irhs;
+        equivalentModes(*this, rhs, ilhs, irhs);
+        
+        switch (ilhs._mode) {
+            case kNumberModeFloating:
+                return ilhs._value.floating < irhs._value.floating;
+                break;
+                
+            case kNumberModeInteger:
+                return ilhs._value.integer < irhs._value.integer;
+                break;
+        }
+    }
+    
+    bool Number::operator>(const Number& rhs) const {
+        Number ilhs,irhs;
+        equivalentModes(*this, rhs, ilhs, irhs);
+        
+        switch (ilhs._mode) {
+            case kNumberModeFloating:
+                return ilhs._value.floating > irhs._value.floating;
+                break;
+                
+            case kNumberModeInteger:
+                return ilhs._value.integer > irhs._value.integer;
+                break;
+        }
+    }
+    
+    bool Number::operator<=(const Number& rhs) const {
+        Number ilhs,irhs;
+        equivalentModes(*this, rhs, ilhs, irhs);
+        
+        switch (ilhs._mode) {
+            case kNumberModeFloating:
+                return ilhs._value.floating <= irhs._value.floating;
+                break;
+                
+            case kNumberModeInteger:
+                return ilhs._value.integer <= irhs._value.integer;
+                break;
+        }
+    }
+    
+    bool Number::operator>=(const Number& rhs) const {
+        Number ilhs,irhs;
+        equivalentModes(*this, rhs, ilhs, irhs);
+        
+        switch (ilhs._mode) {
+            case kNumberModeFloating:
+                return ilhs._value.floating >= irhs._value.floating;
+                break;
+                
+            case kNumberModeInteger:
+                return ilhs._value.integer >= irhs._value.integer;
+                break;
+        }
+    }
+    
+    bool Number::operator!=(const Number& rhs) const {
+        return !operator==(rhs);
+    }
     
 #pragma mark -
 #pragma mark Standard Library
@@ -170,12 +248,8 @@ namespace tinyclojure {
     namespace core {
         /// function for adding a list of numbers
         class Arithmetic : public ExtensionFunction {
-            virtual double floatOperation(double lhs, double rhs) {
-                return 0;
-            }
-
-            virtual int integerOperation(int lhs, int rhs) {
-                return 0;
+            virtual Number numberOperation(Number lhs, Number rhs) {
+                return Number(0);
             }
             
             int minimumNumberOfArguments() {
@@ -183,19 +257,19 @@ namespace tinyclojure {
             }
             
             Object* execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
-                int *values = new int[arguments.size()];
+                Number *values = new Number[arguments.size()];
                 std::vector<Object*> evaluatedArguments;
                 for (int argumentIndex = 0; argumentIndex < arguments.size(); ++argumentIndex) {
                     Object *evaluatedArgument = _gc->registerObject(_evaluator->recursiveEval(interpreterState, arguments[argumentIndex]));
-                    if (evaluatedArgument->type() != Object::kObjectTypeInteger) {
+                    if (evaluatedArgument->type() != Object::kObjectTypeNumber) {
                         throw Error("Arithmetic functions require all arguments to be numbers");
                     }
-                    values[argumentIndex] = evaluatedArgument->integerValue();
+                    values[argumentIndex] = evaluatedArgument->numberValue();
                 }
                 
-                int current = values[0];
+                Number current = values[0];
                 for (int argumentIndex = 1; argumentIndex < arguments.size(); ++argumentIndex) {
-                    current = integerOperation(current, values[argumentIndex]);
+                    current = numberOperation(current, values[argumentIndex]);
                 }
                 delete[] values;
 
@@ -208,11 +282,7 @@ namespace tinyclojure {
                 return std::string("+");
             }
             
-            virtual double floatOperation(double lhs, double rhs) {
-                return lhs + rhs;
-            }
-            
-            virtual int integerOperation(int lhs, int rhs) {
+            virtual Number numberOperation(Number lhs, Number rhs) {
                 return lhs + rhs;
             }
         };
@@ -222,11 +292,7 @@ namespace tinyclojure {
                 return "-";
             }
             
-            virtual double floatOperation(double lhs, double rhs) {
-                return lhs - rhs;
-            }
-            
-            virtual int integerOperation(int lhs, int rhs) {
+            virtual Number numberOperation(Number lhs, Number rhs) {
                 return lhs - rhs;
             }
         };
@@ -236,11 +302,7 @@ namespace tinyclojure {
                 return "*";
             }
             
-            virtual double floatOperation(double lhs, double rhs) {
-                return lhs * rhs;
-            }
-            
-            virtual int integerOperation(int lhs, int rhs) {
+            virtual Number numberOperation(Number lhs, Number rhs) {
                 return lhs * rhs;
             }
         };
@@ -250,11 +312,7 @@ namespace tinyclojure {
                 return "/";
             }
             
-            virtual double floatOperation(double lhs, double rhs) {
-                return lhs / rhs;
-            }
-            
-            virtual int integerOperation(int lhs, int rhs) {
+            virtual Number numberOperation(Number lhs, Number rhs) {
                 return lhs / rhs;
             }
         };
@@ -322,7 +380,7 @@ namespace tinyclojure {
                 for (int argumentIndex=0; argumentIndex<arguments.size(); ++argumentIndex) {
                     evaluatedArguments.push_back(_evaluator->recursiveEval(interpreterState, arguments[argumentIndex]));
                     
-                    if (evaluatedArguments.back()->type() != Object::kObjectTypeInteger) {
+                    if (evaluatedArguments.back()->type() != Object::kObjectTypeNumber) {
                         std::stringstream stringBuilder;
                         
                         stringBuilder   << "Arguments to "
@@ -338,7 +396,7 @@ namespace tinyclojure {
                 for (int argumentIndex = 1; argumentIndex < arguments.size(); ++argumentIndex) {
                     Object *rhs = _evaluator->recursiveEval(interpreterState, arguments[argumentIndex]);
                     
-                    if (!comparison(lhs->integerValue(), rhs->integerValue())) {
+                    if (!comparison(lhs->numberValue(), rhs->numberValue())) {
                         return _gc->registerObject(new Object(false));
                     }
                 }
@@ -347,7 +405,7 @@ namespace tinyclojure {
             }
             
         protected:
-            bool comparison(int lhs, int rhs) {
+            bool comparison(Number lhs, Number rhs) {
                 return true;
             }
         };
@@ -357,7 +415,7 @@ namespace tinyclojure {
                 return "<";
             }
             
-            bool comparison(int lhs, int rhs) {
+            bool comparison(Number lhs, Number rhs) {
                 return lhs < rhs;
             }
         };
@@ -367,7 +425,7 @@ namespace tinyclojure {
                 return ">";
             }
             
-            bool comparison(int lhs, int rhs) {
+            bool comparison(Number lhs, Number rhs) {
                 return lhs > rhs;
             }
         };
@@ -377,7 +435,7 @@ namespace tinyclojure {
                 return "<=";
             }
             
-            bool comparison(int lhs, int rhs) {
+            bool comparison(Number lhs, Number rhs) {
                 return lhs <= rhs;
             }
         };
@@ -387,7 +445,7 @@ namespace tinyclojure {
                 return ">=";
             }
             
-            bool comparison(int lhs, int rhs) {
+            bool comparison(Number lhs, Number rhs) {
                 return lhs >= rhs;
             }
         };
@@ -623,7 +681,7 @@ namespace tinyclojure {
             case kObjectTypeString:
                 delete pointer.stringValue;
                 break;
-                
+                                
             case kObjectTypeVector:
                 delete pointer.vectorPointer;
                 break;
@@ -632,10 +690,13 @@ namespace tinyclojure {
                 // leave the object to the gc
                 delete pointer.functionValue.argumentSymbols;
                 break;
+
+            case kObjectTypeNumber:
+                delete pointer.numberPointer;
+                break;
                 
             case kObjectTypeCons:
                 // it isn't our business deleting "unused" objects, that is for the GC
-            case kObjectTypeInteger:
             case kObjectTypeBoolean:
             case kObjectTypeNil:
                 // nothing need be done
@@ -653,8 +714,8 @@ namespace tinyclojure {
                 return pointer.booleanValue == rhs.pointer.booleanValue;
                 break;
                 
-            case kObjectTypeInteger:
-                return pointer.integerValue == rhs.pointer.integerValue;
+            case kObjectTypeNumber:
+                return *pointer.numberPointer == *rhs.pointer.numberPointer;
                 break;
                 
             case kObjectTypeNil:
@@ -706,14 +767,24 @@ namespace tinyclojure {
         return *pointer.functionValue.argumentSymbols;
     }
     
+    Object::Object(Number numberValue) {
+        _type = kObjectTypeNumber;
+        pointer.numberPointer = new Number(numberValue);
+    }
+    
     Object::Object(bool boolValue) {
         _type = kObjectTypeBoolean;
         pointer.booleanValue = boolValue;
     }
     
-    Object::Object(int value) {
-        _type = kObjectTypeInteger;
-        pointer.integerValue = value;
+    Object::Object(int val) {
+        _type = kObjectTypeNumber;
+        pointer.numberPointer = new Number(val);
+    }
+
+    Object::Object(double val) {
+        _type = kObjectTypeNumber;
+        pointer.numberPointer = new Number(val);
     }
     
     Object::Object(Object *left, Object *right) {
@@ -735,8 +806,8 @@ namespace tinyclojure {
         return *pointer.vectorPointer;
     }
     
-    int& Object::integerValue() {
-        return pointer.integerValue;
+    Number& Object::numberValue() {
+        return *pointer.numberPointer;
     }
     
     bool& Object::booleanValue() {
@@ -745,8 +816,8 @@ namespace tinyclojure {
     
     bool Object::coerceBoolean() {
         switch (_type) {                
-            case kObjectTypeInteger:
-                return integerValue()!=0;
+            case kObjectTypeNumber:
+                return numberValue()!=Number(0);
                 break;
                 
             case kObjectTypeBoolean:
@@ -778,8 +849,8 @@ namespace tinyclojure {
                 stringBuilder << '"' << *pointer.stringValue << '"';
                 break;
                 
-            case kObjectTypeInteger:
-                stringBuilder << pointer.integerValue;
+            case kObjectTypeNumber:
+                stringBuilder << pointer.numberPointer->stringRepresentation();
                 break;
                 
             case kObjectTypeVector:
@@ -1309,7 +1380,7 @@ namespace tinyclojure {
     Object* TinyClojure::recursiveEval(InterpreterScope *interpreterState, Object *code) {
         switch (code->type()) {
             case Object::kObjectTypeNil:
-            case Object::kObjectTypeInteger:
+            case Object::kObjectTypeNumber:
             case Object::kObjectTypeString:
             case Object::kObjectTypeBoolean:
             case Object::kObjectTypeFunction:
