@@ -410,8 +410,11 @@ namespace tinyclojure {
      */
     class Evaluator {
     public:
-        /// the internal recursive evaluator, see eval for documentations
-        virtual Object* recursiveEval(InterpreterScope *interpreterState, Object *code) = 0;
+        /// the internal recursive evaluator, this evaluates, but it does not scope the statements
+        virtual Object* unscopedEval(InterpreterScope *interpreterState, Object *code) = 0;
+
+        /// the internal recursive evaluator, this puts statements in a scope and evaluates them
+        virtual Object* scopedEval(InterpreterScope *interpreterState, Object *code) = 0;
     };
     
     /**
@@ -507,7 +510,10 @@ namespace tinyclojure {
         virtual void loadExtensionFunctions();
         
         /// the internal recursive evaluator, see eval for documentations
-        Object* recursiveEval(InterpreterScope *interpreterState, Object *code);
+        Object* unscopedEval(InterpreterScope *interpreterState, Object *code);
+        
+        /// place a scope around unscopedEval
+        Object* scopedEval(InterpreterScope *interpreterState, Object *code);
         
         /// this erases the persistent scope, removing all symbols and objects
         void resetInterpreter();
