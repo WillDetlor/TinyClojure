@@ -627,7 +627,13 @@ namespace tinyclojure {
                 Object *evaluatedArgument = _evaluator->recursiveEval(interpreterState, arguments[0]);
                 
                 if (evaluatedArgument->type() != Object::kObjectTypeCons) {
-                    throw Error("arguments to ");
+                    std::stringstream stringBuilder;
+                    
+                    stringBuilder   << "arguments to "
+                                    << functionName()
+                                    << "must be of cons type";
+                    
+                    throw Error(stringBuilder.str());
                 }
                 
                 return operation(evaluatedArgument);
