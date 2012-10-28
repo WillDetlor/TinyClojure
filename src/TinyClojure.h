@@ -177,6 +177,12 @@ namespace tinyclojure {
         /// accessor for parameter list part of function value
         std::vector<Object*>& functionValueParameters();
         
+        /// accessor for car
+        Object*& consValueLeft();
+        
+        /// accessor for cdr
+        Object*& consValueRight();
+        
         /// return a reference to this object as an integer value
         Number& numberValue();
         

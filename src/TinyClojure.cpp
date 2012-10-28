@@ -248,9 +248,7 @@ namespace tinyclojure {
     namespace core {
         /// function for adding a list of numbers
         class Arithmetic : public ExtensionFunction {
-            virtual Number numberOperation(Number lhs, Number rhs) {
-                return Number(0);
-            }
+            virtual Number numberOperation(Number lhs, Number rhs) = 0;
             
             int minimumNumberOfArguments() {
                 return 1;
@@ -405,9 +403,7 @@ namespace tinyclojure {
             }
             
         protected:
-            virtual bool comparison(Number lhs, Number rhs) {
-                return true;
-            }
+            virtual bool comparison(Number lhs, Number rhs) = 0;
         };
         
         class LessThan : public NumericInequality {
@@ -619,6 +615,44 @@ namespace tinyclojure {
                 return _gc->registerObject(new Object(arguments[0], parameterSymbols));
             }
         };
+        
+        class ConsFunction : public ExtensionFunction {
+            int requiredNumberOfArguments() {
+                return 1;
+            }
+            
+            virtual Object* operation(Object *consObject) = 0;
+            
+            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+                Object *evaluatedArgument = _evaluator->recursiveEval(interpreterState, arguments[0]);
+                
+                if (evaluatedArgument->type() != Object::kObjectTypeCons) {
+                    throw Error("arguments to ");
+                }
+                
+                return operation(evaluatedArgument);
+            }
+        };
+        
+        class First : public ConsFunction {
+            std::string functionName() {
+                return "first";
+            }
+            
+            Object *operation(Object *consObject) {
+                return consObject->consValueLeft();
+            }
+        };
+
+        class Rest : public ConsFunction {
+            std::string functionName() {
+                return "rest";
+            }
+            
+            Object *operation(Object *consObject) {
+                return consObject->consValueRight();
+            }
+        };
     }
     
 #pragma mark -
@@ -780,6 +814,14 @@ namespace tinyclojure {
     
     std::vector<Object*>& Object::functionValueParameters() {
         return *pointer.functionValue.argumentSymbols;
+    }
+    
+    Object*& Object::consValueLeft() {
+        return pointer.consValue.left;
+    }
+    
+    Object*& Object::consValueRight() {
+        return pointer.consValue.right;
     }
     
     Object::Object(Number numberValue) {
@@ -1040,6 +1082,20 @@ namespace tinyclojure {
         _extensionFunctions.push_back(function);        
     }
     
+    void TinyClojure::resetInterpreter() {
+        if (_baseScope) {
+            delete _baseScope;
+        }
+        
+        _baseScope = new InterpreterScope();
+        
+        for (int functionIndex = 0; functionIndex < _extensionFunctions.size(); ++functionIndex) {
+            ExtensionFunction *aFunction = _extensionFunctions[functionIndex];
+            _baseScope->setSymbolInScope(aFunction->functionName(),
+                                         _gc->registerObject(new Object(aFunction)));
+        }
+    }
+    
     void TinyClojure::loadExtensionFunctions() {
         internalAddExtensionFunction(new core::Plus());
         internalAddExtensionFunction(new core::Minus());
@@ -1058,20 +1114,8 @@ namespace tinyclojure {
         internalAddExtensionFunction(new core::Do);
         internalAddExtensionFunction(new core::Vector);
         internalAddExtensionFunction(new core::Fn);
-    }
-    
-    void TinyClojure::resetInterpreter() {
-        if (_baseScope) {
-            delete _baseScope;
-        }
-        
-        _baseScope = new InterpreterScope();
-        
-        for (int functionIndex = 0; functionIndex < _extensionFunctions.size(); ++functionIndex) {
-            ExtensionFunction *aFunction = _extensionFunctions[functionIndex];
-            _baseScope->setSymbolInScope(aFunction->functionName(),
-                                         _gc->registerObject(new Object(aFunction)));
-        }
+        internalAddExtensionFunction(new core::First);
+        internalAddExtensionFunction(new core::Rest);
     }
     
 #pragma mark parser
