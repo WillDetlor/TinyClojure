@@ -773,6 +773,10 @@ namespace tinyclojure {
     Object*& Object::functionValueCode() {
         return pointer.functionValue.objectPointer;
     }
+
+    ExtensionFunction*& Object::functionValueExtensionFunction() {
+        return pointer.functionValue.extensionFunctionPointer;
+    }
     
     std::vector<Object*>& Object::functionValueParameters() {
         return *pointer.functionValue.argumentSymbols;
@@ -997,7 +1001,6 @@ namespace tinyclojure {
         _ioProxy = new IOProxy();
         _gc = new GarbageCollector();
         _newlineSet = std::string("\n\r");
-        _baseScope = new InterpreterScope();
         
         for (char excludeChar = 1; excludeChar<32; ++excludeChar) {
             _excludeSet.append(&excludeChar, 1);
@@ -1006,7 +1009,8 @@ namespace tinyclojure {
         
         _numberSet = std::string("0123456789");
         
-        loadExtensionFunctions();
+        _baseScope = NULL;
+        resetInterpreter();
     }
     
     TinyClojure::~TinyClojure() {
@@ -1025,6 +1029,8 @@ namespace tinyclojure {
         function->setIOProxy(_ioProxy);
         
         _functionTable[function->functionName()] = function;
+        
+        _baseScope->setSymbolInScope(function->functionName(), _gc->registerObject(new Object(function)));
     }
     
     void TinyClojure::loadExtensionFunctions() {
@@ -1048,8 +1054,13 @@ namespace tinyclojure {
     }
     
     void TinyClojure::resetInterpreter() {
-        delete _baseScope;
+        if (_baseScope) {
+            delete _baseScope;
+        }
+        
         _baseScope = new InterpreterScope();
+        
+        loadExtensionFunctions();
     }
     
 #pragma mark parser
@@ -1471,15 +1482,9 @@ namespace tinyclojure {
                     
                     elements.erase(elements.begin());   // elements now contains the arguments to the function
                     
-                    if (identifierObject->type()==Object::kObjectTypeSymbol) {
-                        std::map<std::string, ExtensionFunction*>::iterator it = _functionTable.find(identifierObject->stringValue());
-                        if (it == _functionTable.end()) {
-                            std::stringstream stringBuilder;
-                            stringBuilder   << "Do not understand symbol "
-                                            << identifierObject->stringValue();
-                            throw Error(stringBuilder.str());
-                        } else {
-                            ExtensionFunction *function = it->second;
+                    if (identifierObject->type()==Object::kObjectTypeFunction) {
+                        if (identifierObject->builtinFunction()) {
+                            ExtensionFunction *function = identifierObject->functionValueExtensionFunction();
                             
                             int minArgs = function->minimumNumberOfArguments(),
                                 maxArgs = function->maximumNumberOfArguments();
@@ -1488,11 +1493,11 @@ namespace tinyclojure {
                                 if (elements.size() < minArgs) {
                                     std::stringstream stringBuilder;
                                     stringBuilder   << "Function "
-                                                    << function->functionName()
-                                                    << " requires at least "
-                                                    << minArgs
-                                                    << " arguments"
-                                                    << std::endl;
+                                    << function->functionName()
+                                    << " requires at least "
+                                    << minArgs
+                                    << " arguments"
+                                    << std::endl;
                                     
                                     throw Error(stringBuilder.str());
                                 }
@@ -1502,11 +1507,11 @@ namespace tinyclojure {
                                 if (elements.size() > maxArgs) {
                                     std::stringstream stringBuilder;
                                     stringBuilder   << "Function "
-                                                    << function->functionName()
-                                                    << " requires no more than "
-                                                    << maxArgs
-                                                    << " arguments"
-                                                    << std::endl;
+                                    << function->functionName()
+                                    << " requires no more than "
+                                    << maxArgs
+                                    << " arguments"
+                                    << std::endl;
                                     
                                     throw Error(stringBuilder.str());
                                 }
@@ -1518,27 +1523,27 @@ namespace tinyclojure {
                             }
                             
                             return result;
+                        } else {
+                            if (identifierObject->functionValueParameters().size()!=elements.size()) {
+                                std::stringstream stringBuilder;
+                                stringBuilder   << "Function requires "
+                                                << elements.size()
+                                                << " arguments"
+                                                << std::endl;
+                                                
+                                throw Error(stringBuilder.str());
+                            }
+                            
+                            // build a new scope containing the passed arguments
+                            InterpreterScope functionScope(interpreterState);
+                            for (int parameterIndex=0; parameterIndex<identifierObject->functionValueParameters().size(); ++parameterIndex) {
+                                functionScope.setSymbolInScope(identifierObject->functionValueParameters()[parameterIndex]->stringValue(), recursiveEval(interpreterState, elements[parameterIndex]));
+                            }
+                            
+                            return recursiveEval(&functionScope, identifierObject->functionValueCode());
                         }
-                    } else if (identifierObject->type()==Object::kObjectTypeFunction) {
-                        if (identifierObject->functionValueParameters().size()!=elements.size()) {
-                            std::stringstream stringBuilder;
-                            stringBuilder   << "Function requires "
-                                            << elements.size()
-                                            << " arguments"
-                                            << std::endl;
-                                            
-                            throw Error(stringBuilder.str());
-                        }
-                        
-                        // build a new scope containing the passed arguments
-                        InterpreterScope functionScope(interpreterState);
-                        for (int parameterIndex=0; parameterIndex<identifierObject->functionValueParameters().size(); ++parameterIndex) {
-                            functionScope.setSymbolInScope(identifierObject->functionValueParameters()[parameterIndex]->stringValue(), recursiveEval(interpreterState, elements[parameterIndex]));
-                        }
-                        
-                        return recursiveEval(&functionScope, identifierObject->functionValueCode());
                     } else {
-                        throw Error("An executable S Expression should begin with an identifier");
+                        throw Error("An executable S Expression must begin with a function object");
                     }
                 } else {
                     // I could be wrong, but I don't think this case makes any sense, most likely we got here cos of a flaw in buildList
