@@ -673,6 +673,13 @@ namespace tinyclojure {
         _type = kObjectTypeFunction;
         pointer.functionValue.objectPointer = code;
         pointer.functionValue.argumentSymbols = new std::vector<Object*>(arguments);
+        pointer.functionValue.extensionFunctionPointer = NULL;
+    }
+    
+    Object::Object(ExtensionFunction *function) {
+        _type = kObjectTypeFunction;
+        pointer.functionValue.objectPointer = NULL;
+        pointer.functionValue.extensionFunctionPointer = function;
     }
     
     Object::~Object() {
@@ -737,7 +744,11 @@ namespace tinyclojure {
                 break;
                 
             case kObjectTypeFunction:
-                return *pointer.functionValue.objectPointer == *rhs.pointer.functionValue.objectPointer;
+                if (builtinFunction()) {
+                    return pointer.functionValue.extensionFunctionPointer->functionName() == rhs.pointer.functionValue.extensionFunctionPointer->functionName();
+                } else {
+                    return *pointer.functionValue.objectPointer == *rhs.pointer.functionValue.objectPointer;
+                }
                 break;
  
             case kObjectTypeSymbol:
@@ -835,14 +846,28 @@ namespace tinyclojure {
         }
     }
     
+    bool Object::builtinFunction() {
+        if (pointer.functionValue.objectPointer) {
+            return false;
+        }
+        
+        return true;
+    }
+    
     std::string Object::stringRepresentation(bool expandList) {
         std::stringstream stringBuilder;
         
         switch (_type) {
             case kObjectTypeFunction:
-                stringBuilder   << "<<<fn "
-                                << pointer.functionValue.objectPointer->stringRepresentation()
-                                << ">>>";
+                if (builtinFunction()) {
+                    stringBuilder   << "<<<builtin "
+                                    << pointer.functionValue.extensionFunctionPointer->functionName()
+                                    << ">>>";
+                } else {
+                    stringBuilder   << "<<<fn "
+                                    << pointer.functionValue.objectPointer->stringRepresentation()
+                                    << ">>>";
+                }
                 break;
                 
             case kObjectTypeString:

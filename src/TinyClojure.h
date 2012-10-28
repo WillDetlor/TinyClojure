@@ -99,6 +99,8 @@ namespace tinyclojure {
         
     };
 
+    /// a forward declaration to allow for an ExtensionFunction pointer in Object
+    class ExtensionFunction;
     
     /**
      * class to represent Clojure objects
@@ -143,7 +145,13 @@ namespace tinyclojure {
         /// construct a function
         Object(Object *code, std::vector<Object*> arguments);
         
+        /// construct an extension function
+        Object(ExtensionFunction *function);
+        
         ~Object();
+        
+        /// given that this is an extension function, is this a builtin type?
+        bool builtinFunction();
         
         /// this object's type
         ObjectType type() const { return _type; }
@@ -162,6 +170,9 @@ namespace tinyclojure {
         
         /// accessor for code part of function value
         Object*& functionValueCode();
+        
+        /// accessor for extension function part of function value
+        ExtensionFunction*& functionValueExtensionFunction();
         
         /// accessor for parameter list part of function value
         std::vector<Object*>& functionValueParameters();
@@ -193,9 +204,11 @@ namespace tinyclojure {
                 Object *left, *right;
             } consValue;
             
+            // if objectPointer is nil, interpret this as an extension function based function, else interpret as a user lambda
             struct {
                 Object *objectPointer;
                 std::vector<Object*>* argumentSymbols;
+                ExtensionFunction *extensionFunctionPointer;
             } functionValue;
             
             std::vector<Object*>* vectorPointer;
