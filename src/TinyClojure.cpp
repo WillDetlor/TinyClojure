@@ -1010,12 +1010,16 @@ namespace tinyclojure {
         _numberSet = std::string("0123456789");
         
         _baseScope = NULL;
+        
+        loadExtensionFunctions();
+
+        // this will initialise the root scope
         resetInterpreter();
     }
     
     TinyClojure::~TinyClojure() {
-        for (std::map<std::string, ExtensionFunction*>::iterator it = _functionTable.begin(); it != _functionTable.end(); ++it) {
-            delete it->second;
+        for (std::vector<ExtensionFunction*>::iterator it = _extensionFunctions.begin(); it != _extensionFunctions.end(); ++it) {
+            delete *it;
         }
         
         delete _baseScope;
@@ -1024,33 +1028,36 @@ namespace tinyclojure {
     }
     
     void TinyClojure::addExtensionFunction(ExtensionFunction *function) {
+        internalAddExtensionFunction(function);
+        resetInterpreter();
+    }
+    
+    void TinyClojure::internalAddExtensionFunction(ExtensionFunction *function) {
         function->setEvaluator(this);
         function->setGarbageCollector(_gc);
         function->setIOProxy(_ioProxy);
         
-        _functionTable[function->functionName()] = function;
-        
-        _baseScope->setSymbolInScope(function->functionName(), _gc->registerObject(new Object(function)));
+        _extensionFunctions.push_back(function);        
     }
     
     void TinyClojure::loadExtensionFunctions() {
-        addExtensionFunction(new core::Plus());
-        addExtensionFunction(new core::Minus());
-        addExtensionFunction(new core::Multiply());
-        addExtensionFunction(new core::Divide());
-        addExtensionFunction(new core::If());
-        addExtensionFunction(new core::Equality());
-        addExtensionFunction(new core::Cons());
-        addExtensionFunction(new core::List());
-        addExtensionFunction(new core::LessThan);
-        addExtensionFunction(new core::LessThanOrEqual);
-        addExtensionFunction(new core::GreaterThan);
-        addExtensionFunction(new core::GreaterThanOrEqual);
-        addExtensionFunction(new core::Print());
-        addExtensionFunction(new core::Def);
-        addExtensionFunction(new core::Do);
-        addExtensionFunction(new core::Vector);
-        addExtensionFunction(new core::Fn);
+        internalAddExtensionFunction(new core::Plus());
+        internalAddExtensionFunction(new core::Minus());
+        internalAddExtensionFunction(new core::Multiply());
+        internalAddExtensionFunction(new core::Divide());
+        internalAddExtensionFunction(new core::If());
+        internalAddExtensionFunction(new core::Equality());
+        internalAddExtensionFunction(new core::Cons());
+        internalAddExtensionFunction(new core::List());
+        internalAddExtensionFunction(new core::LessThan);
+        internalAddExtensionFunction(new core::LessThanOrEqual);
+        internalAddExtensionFunction(new core::GreaterThan);
+        internalAddExtensionFunction(new core::GreaterThanOrEqual);
+        internalAddExtensionFunction(new core::Print());
+        internalAddExtensionFunction(new core::Def);
+        internalAddExtensionFunction(new core::Do);
+        internalAddExtensionFunction(new core::Vector);
+        internalAddExtensionFunction(new core::Fn);
     }
     
     void TinyClojure::resetInterpreter() {
@@ -1060,7 +1067,11 @@ namespace tinyclojure {
         
         _baseScope = new InterpreterScope();
         
-        loadExtensionFunctions();
+        for (int functionIndex = 0; functionIndex < _extensionFunctions.size(); ++functionIndex) {
+            ExtensionFunction *aFunction = _extensionFunctions[functionIndex];
+            _baseScope->setSymbolInScope(aFunction->functionName(),
+                                         _gc->registerObject(new Object(aFunction)));
+        }
     }
     
 #pragma mark parser

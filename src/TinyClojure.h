@@ -494,9 +494,6 @@ namespace tinyclojure {
          */
         ~TinyClojure();
         
-        /// add an extension function to the function table
-        void addExtensionFunction(ExtensionFunction *function);
-        
         /// call this to load all extension functions, override it to change which functions are loaded
         virtual void loadExtensionFunctions();
         
@@ -506,7 +503,13 @@ namespace tinyclojure {
         /// this erases the persistent scope, removing all symbols and objects
         void resetInterpreter();
         
+        /// add an extension function and reset the interpreter so that it is loaded
+        void addExtensionFunction(ExtensionFunction *function);
+        
     protected:
+        /// add an extension function to the function table
+        void internalAddExtensionFunction(ExtensionFunction *function);
+
         /// the IO proxy for this interpreter
         IOProxy *_ioProxy;
         
@@ -528,8 +531,8 @@ namespace tinyclojure {
         
         std::string _newlineSet, _excludeSet, _numberSet;
         
-        /// table of extension functions
-        std::map<std::string, ExtensionFunction*> _functionTable;
+        /// a list of loaded extension functions
+        std::vector<ExtensionFunction*> _extensionFunctions;
     };
 }
 
