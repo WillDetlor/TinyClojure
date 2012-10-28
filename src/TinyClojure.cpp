@@ -405,12 +405,12 @@ namespace tinyclojure {
             }
             
         protected:
-            bool comparison(Number lhs, Number rhs) {
+            virtual bool comparison(Number lhs, Number rhs) {
                 return true;
             }
         };
         
-        class LessThan : public ExtensionFunction {
+        class LessThan : public NumericInequality {
             std::string functionName() {
                 return "<";
             }
@@ -420,7 +420,7 @@ namespace tinyclojure {
             }
         };
 
-        class GreaterThan : public ExtensionFunction {
+        class GreaterThan : public NumericInequality {
             std::string functionName() {
                 return ">";
             }
@@ -430,7 +430,7 @@ namespace tinyclojure {
             }
         };
 
-        class LessThanOrEqual : public ExtensionFunction {
+        class LessThanOrEqual : public NumericInequality {
             std::string functionName() {
                 return "<=";
             }
@@ -440,7 +440,7 @@ namespace tinyclojure {
             }
         };
 
-        class GreaterThanOrEqual : public ExtensionFunction {
+        class GreaterThanOrEqual : public NumericInequality {
             std::string functionName() {
                 return ">=";
             }

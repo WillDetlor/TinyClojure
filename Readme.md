@@ -41,9 +41,9 @@ If you want to get involved, get in touch with me at slidetocode at gmail dot co
 Right now, the interpreter is "in progress", and it really just needs to get started, personal TODOs
 
 * merge builtin functions and other functions
-* variable length argument lists to fn
-* implement scopes
+* implement scopes properly
 
+* variable length argument lists to fn (the &)
 * full numeric stack.  Only cater for integers and floats right now, need fractions
 * Test suite.  This is sadly lacking right now.
 * refactoring.  C++ is not my "first language" in the programming world, so any refactors to make it more idiomatic would be appreciated.
