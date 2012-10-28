@@ -407,6 +407,7 @@ namespace tinyclojure {
     
     /**
      * an abstract base class so that TinyClojure can provide callbacks to the ExtensionFunction objects
+     * TODO maybe I'd be better off using a forward declaration, this interface is not "real"
      */
     class Evaluator {
     public:
@@ -415,6 +416,13 @@ namespace tinyclojure {
 
         /// the internal recursive evaluator, this puts statements in a scope and evaluates them
         virtual Object* scopedEval(InterpreterScope *interpreterState, Object *code) = 0;
+        
+        /**
+         * create a list from a std::vector
+         *
+         * this is here, not in the Object constructor because it needs access to the garbage collector
+         */
+        virtual Object* listObject(std::vector<Object*> list) = 0;
     };
     
     /**
@@ -496,6 +504,9 @@ namespace tinyclojure {
          */
         Object* eval(Object* object);
         
+        // see Evalutor for docs
+        Object* listObject(std::vector<Object*> list);
+        
         /**
          * default constructor
          */
@@ -527,13 +538,6 @@ namespace tinyclojure {
 
         /// the IO proxy for this interpreter
         IOProxy *_ioProxy;
-        
-        /**
-         * create a list from a std::vector
-         *
-         * this is here, not in the Object constructor because it needs access to the garbage collector
-         */
-        Object* listObject(std::vector<Object*> list);
         
         /// the base scope owned by this object and persistent between evaluations
         InterpreterScope *_baseScope;

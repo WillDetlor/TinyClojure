@@ -613,9 +613,9 @@ namespace tinyclojure {
                 }
                 
                 // TODO recurse through the lambda capturing the local state
-                // TODO capture all parts of the function body in a do block
                 
-                return _gc->registerObject(new Object(arguments[0], parameterSymbols));
+                arguments.insert(arguments.begin(), _gc->registerObject(new Object("do", true)));
+                return _gc->registerObject(new Object(_evaluator->listObject(arguments), parameterSymbols));
             }
         };
         

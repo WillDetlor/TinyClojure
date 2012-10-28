@@ -41,7 +41,6 @@ If you want to get involved, get in touch with me at slidetocode at gmail dot co
 Right now, the interpreter is "in progress", and it really just needs to get started, personal TODOs
 
 ###### Immediate tasks
-* implement scopes properly
 * work on the command line interface
 * comments
 
