@@ -43,6 +43,7 @@ Right now, the interpreter is "in progress", and it really just needs to get sta
 ###### Immediate tasks
 * work on the command line interface
 * comments
+* should ensure all Object properties are indeed immutable
 
 ###### Minor
 * shouldn't need to reset the interpreter when an extension function is added

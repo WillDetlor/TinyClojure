@@ -577,6 +577,45 @@ namespace tinyclojure {
                 return 2;
             }
             
+            Object* captureState(Object *object, InterpreterScope *interpreterState) {
+                switch (object->type()) {
+                    case Object::kObjectTypeBoolean:
+                    case Object::kObjectTypeNil:
+                    case Object::kObjectTypeNumber:
+                    case Object::kObjectTypeString:
+                    case Object::kObjectTypeFunction:
+                        return object;
+                        break;
+                        
+                    case Object::kObjectTypeCons: {
+                        Object  *left = captureState(object->consValueLeft(), interpreterState),
+                                *right = captureState(object->consValueRight(), interpreterState);
+                        
+                        return _gc->registerObject(new Object(left, right));
+                        } break;
+                        
+                    case Object::kObjectTypeVector: {
+                        std::vector<Object *> newVector;
+                        
+                        for (int vectorIndex = 0; vectorIndex < object->vectorValue().size(); ++vectorIndex) {
+                            newVector.push_back(captureState(object->vectorValue()[vectorIndex], interpreterState));
+                        }
+                        
+                        return _gc->registerObject(new Object(newVector));
+                        } break;
+                        
+                    case Object::kObjectTypeSymbol: {
+                        Object *lookedUpValue = interpreterState->lookupSymbol(object->stringValue());
+                        
+                        if (lookedUpValue) {
+                            return lookedUpValue;
+                        } else {
+                            return object;
+                        }
+                        } break;
+                }
+            }
+            
             Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
                 Object * arglist = arguments[0];
                 
@@ -612,10 +651,13 @@ namespace tinyclojure {
                     throw Error("Could not build argument list");
                 }
                 
-                // TODO recurse through the lambda capturing the local state
+                std::vector<Object*> capturedArguments;
+                capturedArguments.push_back(_gc->registerObject(new Object("do", true)));
+                for (int argumentIndex = 0; argumentIndex < arguments.size(); ++argumentIndex) {
+                    capturedArguments.push_back(captureState(arguments[argumentIndex], interpreterState));
+                }
                 
-                arguments.insert(arguments.begin(), _gc->registerObject(new Object("do", true)));
-                return _gc->registerObject(new Object(_evaluator->listObject(arguments), parameterSymbols));
+                return _gc->registerObject(new Object(_evaluator->listObject(capturedArguments), parameterSymbols));
             }
         };
         
