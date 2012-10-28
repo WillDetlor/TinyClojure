@@ -1512,7 +1512,7 @@ namespace tinyclojure {
     Object* TinyClojure::scopedEval(InterpreterScope *interpreterState, Object *code) {
         InterpreterScope newScope(interpreterState);
         
-        return scopedEval(interpreterState, code);
+        return unscopedEval(interpreterState, code);
     }
     
     Object* TinyClojure::unscopedEval(InterpreterScope *interpreterState, Object *code) {
