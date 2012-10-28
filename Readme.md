@@ -41,7 +41,8 @@ If you want to get involved, get in touch with me at slidetocode at gmail dot co
 Right now, the interpreter is "in progress", and it really just needs to get started, personal TODOs
 
 ###### Immediate tasks
-* write a test.clj for current behaviours
+* write a trip.clj for current behaviours
+* write (defn )
 * should ensure all Object properties are indeed immutable
 
 ###### Minor
