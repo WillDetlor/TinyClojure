@@ -485,6 +485,9 @@ namespace tinyclojure {
          */
         Object* parse(std::string stringin);
         
+        /// parse all code in a string
+        void parseAll(std::string codeText, std::vector<Object*>& expressions);
+        
         /**
          * evaluate the code passed above
          */

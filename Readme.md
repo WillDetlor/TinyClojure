@@ -42,6 +42,8 @@ Right now, the interpreter is "in progress", and it really just needs to get sta
 
 ###### Immediate tasks
 * implement scopes properly
+* work on the command line interface
+* comments
 
 ###### Minor
 * shouldn't need to reset the interpreter when an extension function is added

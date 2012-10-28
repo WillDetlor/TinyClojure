@@ -1130,7 +1130,18 @@ namespace tinyclojure {
         ParserState parseState(startText);
         return recursiveParse(parseState);
     }
+    
+    void TinyClojure::parseAll(std::string codeText, std::vector<Object*>& expressions) {
+        ParserState parseState(codeText);
         
+        while (parseState.charactersLeft()) {
+            Object *code = recursiveParse(parseState);
+            if (code) {
+                expressions.push_back(code);
+            }
+        }
+    }
+    
     /**
      * TODO rewrite the entire parser
      *
