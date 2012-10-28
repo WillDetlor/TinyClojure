@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		18805585163300C400288E24 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18805584163300C400288E24 /* main.cpp */; };
-		1880558F1633010100288E24 /* TinyClojure.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1880558D1633010100288E24 /* TinyClojure.cpp */; };
+		18F81BD4163DD96F00F7CCB8 /* TinyClojure.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18F81BD1163DD96F00F7CCB8 /* TinyClojure.cpp */; };
+		18F81BD5163DD96F00F7CCB8 /* tool.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18F81BD3163DD96F00F7CCB8 /* tool.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -24,11 +24,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		185DBF91163DD91F00630C76 /* Readme.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Readme.md; path = ../Readme.md; sourceTree = "<group>"; };
 		18805580163300C400288E24 /* TinyClojure */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TinyClojure; sourceTree = BUILT_PRODUCTS_DIR; };
-		18805584163300C400288E24 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		1880558D1633010100288E24 /* TinyClojure.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TinyClojure.cpp; path = src/TinyClojure.cpp; sourceTree = SOURCE_ROOT; };
-		1880558E1633010100288E24 /* TinyClojure.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TinyClojure.h; path = src/TinyClojure.h; sourceTree = SOURCE_ROOT; };
-		18805590163304F600288E24 /* Readme.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Readme.md; sourceTree = "<group>"; };
+		18F81BD1163DD96F00F7CCB8 /* TinyClojure.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TinyClojure.cpp; path = ../../src/TinyClojure.cpp; sourceTree = "<group>"; };
+		18F81BD2163DD96F00F7CCB8 /* TinyClojure.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TinyClojure.h; path = ../../src/TinyClojure.h; sourceTree = "<group>"; };
+		18F81BD3163DD96F00F7CCB8 /* tool.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = tool.cpp; path = ../../src/tool.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -45,7 +45,7 @@
 		18805575163300C400288E24 = {
 			isa = PBXGroup;
 			children = (
-				18805590163304F600288E24 /* Readme.md */,
+				185DBF91163DD91F00630C76 /* Readme.md */,
 				18805583163300C400288E24 /* TinyClojure */,
 				18805581163300C400288E24 /* Products */,
 			);
@@ -62,9 +62,9 @@
 		18805583163300C400288E24 /* TinyClojure */ = {
 			isa = PBXGroup;
 			children = (
-				18805584163300C400288E24 /* main.cpp */,
-				1880558E1633010100288E24 /* TinyClojure.h */,
-				1880558D1633010100288E24 /* TinyClojure.cpp */,
+				18F81BD1163DD96F00F7CCB8 /* TinyClojure.cpp */,
+				18F81BD2163DD96F00F7CCB8 /* TinyClojure.h */,
+				18F81BD3163DD96F00F7CCB8 /* tool.cpp */,
 			);
 			path = TinyClojure;
 			sourceTree = "<group>";
@@ -120,8 +120,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				18805585163300C400288E24 /* main.cpp in Sources */,
-				1880558F1633010100288E24 /* TinyClojure.cpp in Sources */,
+				18F81BD4163DD96F00F7CCB8 /* TinyClojure.cpp in Sources */,
+				18F81BD5163DD96F00F7CCB8 /* tool.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -212,6 +212,7 @@
 				1880558C163300C400288E24 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

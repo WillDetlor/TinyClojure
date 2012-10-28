@@ -41,12 +41,12 @@ If you want to get involved, get in touch with me at slidetocode at gmail dot co
 Right now, the interpreter is "in progress", and it really just needs to get started, personal TODOs
 
 ###### Immediate tasks
-* work on the command line interface
-* comments
+* write a test.clj for current behaviours
 * should ensure all Object properties are indeed immutable
 
 ###### Minor
 * shouldn't need to reset the interpreter when an extension function is added
+* work on the command line interface
 
 ###### Major
 * variable length argument lists to fn (the &)
