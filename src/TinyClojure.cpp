@@ -1487,7 +1487,7 @@ namespace tinyclojure {
                         // build a new scope containing the passed arguments
                         InterpreterScope functionScope(interpreterState);
                         for (int parameterIndex=0; parameterIndex<identifierObject->functionValueParameters().size(); ++parameterIndex) {
-                            functionScope.setSymbolInScope(identifierObject->functionValueParameters()[parameterIndex]->stringValue(), elements[parameterIndex]);
+                            functionScope.setSymbolInScope(identifierObject->functionValueParameters()[parameterIndex]->stringValue(), recursiveEval(interpreterState, elements[parameterIndex]));
                         }
                         
                         return recursiveEval(&functionScope, identifierObject->functionValueCode());

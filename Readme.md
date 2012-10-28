@@ -2,12 +2,13 @@
 
 ### What is TinyClojure
 
-TinyClojure is a project to build a minute, easily embeddable version of Clojure/ClojureScript, essentially [TinyScheme](http://tinyscheme.sourceforge.net/home.html), but for Clojure.  For TinyClojure small size, hackability and ease of embedding will always take precedence over efficiency.
+TinyClojure is a project to build a small, easily embeddable version of Clojure/ClojureScript. In many ways it is my attempt to create a Clojure equivalent of [TinyScheme](http://tinyscheme.sourceforge.net/home.html).
 
-I started this project because I was looking for an embeddable Clojure for [Lisping](http://slidetocode.com/), an iPad Lisp development environment I develop.  I wanted the functionality of [ClojureC](https://github.com/schani/clojurec), but without the external library dependencies and the complex build process, in other words a Clojure version of [TinyScheme](http://tinyscheme.sourceforge.net/home.html).  
+I started this project because I was looking for an embeddable Clojure for [Lisping](http://slidetocode.com/), an iPad Lisp development environment I develop.  Having used [TinyScheme](http://tinyscheme.sourceforge.net/home.html) for the scheme interpreter in lisping I was looking for a clojure version that is just as easily embeddable, but for Clojure. [ClojureC](https://github.com/schani/clojurec) is good, but the build process is complex, and there are external library dependencies.  These are not insurmountable, but they were sufficient to discourage me from using it.
 
-It is very early days still, and this interpreter is not usable yet.  It shouldn't be long though.
+TinyClojure will never have ClojureC's performance because my focus is on making it the easiest way to embed Clojure within any application.  There are just two files to compile into your code, no external dependencies, and the extension and embedding interface is as simple as it is possible to be.  I don't want TinyClojure to bloat, but I am happy for it to end up considerably larger than the almost impossibly slim TinyScheme.
 
+A warning, these are very early days for TinyClojure, it is not feature complete, and it does not even carry a version number.  Feel free to use it for whatever you would to, but do not rely on it.
 
 ### How do I embed TinyClojure in my code?
 
@@ -39,10 +40,12 @@ If you want to get involved, get in touch with me at slidetocode at gmail dot co
 
 Right now, the interpreter is "in progress", and it really just needs to get started, personal TODOs
 
-* variable argument lists to fn
+* merge builtin functions and other functions
+* variable length argument lists to fn
 * implement scopes
+* parser doesn't understand floating point values
 
-* full numeric stack.  Only cater for integers and floats right now
+* full numeric stack.  Only cater for integers and floats right now, need fractions
 * Test suite.  This is sadly lacking right now.
 * refactoring.  C++ is not my "first language" in the programming world, so any refactors to make it more idiomatic would be appreciated.
 * Garbage collector.  Right now there is no garbage collector to speak of.  Objects collect until the interpreter destructs, then they are deleted.
