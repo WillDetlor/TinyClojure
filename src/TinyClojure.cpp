@@ -1362,8 +1362,29 @@ namespace tinyclojure {
                             }
                         }
                         
+                        bool    isFloat = true,
+                                pointFound = false;
+                        for (int identifierIndex = 0; identifierIndex < identifier.size(); ++identifierIndex) {
+                            if (identifier[identifierIndex]=='.') {
+                                if (pointFound) {
+                                    isFloat = false;
+                                    break;
+                                } else {
+                                    pointFound = true;
+                                }
+                            } else if (_numberSet.find(identifier[identifierIndex]) == _numberSet.npos) {
+                                isInteger = false;
+                                break;
+                            }
+                        }
+                        if (!pointFound) {
+                            isFloat = false;
+                        }
+                        
                         if (isInteger) {
                             return _gc->registerObject(new Object(atoi(identifier.c_str())));
+                        } else if (isFloat) {
+                            return _gc->registerObject(new Object(atof(identifier.c_str())));
                         } else {
                             return _gc->registerObject(new Object(identifier, true));
                         }

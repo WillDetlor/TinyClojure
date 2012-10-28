@@ -43,7 +43,6 @@ Right now, the interpreter is "in progress", and it really just needs to get sta
 * merge builtin functions and other functions
 * variable length argument lists to fn
 * implement scopes
-* parser doesn't understand floating point values
 
 * full numeric stack.  Only cater for integers and floats right now, need fractions
 * Test suite.  This is sadly lacking right now.
