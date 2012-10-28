@@ -1272,7 +1272,7 @@ namespace tinyclojure {
                     break;
                     
                 case sexpTypeListLiteral:
-                    elements.insert(elements.begin(), _gc->registerObject(new Object(std::string("list", true))));
+                    elements.insert(elements.begin(), _gc->registerObject(new Object(std::string("list"), true)));
                     return listObject(elements);
                     break;
                     
@@ -1528,20 +1528,13 @@ namespace tinyclojure {
         
             case Object::kObjectTypeCons:
                 if (code->isList()) {
-                    std::vector<Object*> elements;
-                    code->buildList(elements);
+                    std::vector<Object*> arguments;
+                    code->buildList(arguments);
                     
-                    Object *identifierObject;
+                    Object *identifierObject = recursiveEval(interpreterState, arguments[0]);
                     
-                    // TODO this will become unnecessary when builtin functions are defined as code, just like user functions
-                    try {
-                        identifierObject = recursiveEval(interpreterState, elements[0]);
-                    } catch (Error e) {
-                        identifierObject = elements[0];
-                    }
-                    
-                    
-                    elements.erase(elements.begin());   // elements now contains the arguments to the function
+                    // remove the identifier so that arguments contains just the arguments to the function
+                    arguments.erase(arguments.begin());
                     
                     if (identifierObject->type()==Object::kObjectTypeFunction) {
                         if (identifierObject->builtinFunction()) {
@@ -1551,7 +1544,7 @@ namespace tinyclojure {
                                 maxArgs = function->maximumNumberOfArguments();
                             
                             if (minArgs>=0) {
-                                if (elements.size() < minArgs) {
+                                if (arguments.size() < minArgs) {
                                     std::stringstream stringBuilder;
                                     stringBuilder   << "Function "
                                     << function->functionName()
@@ -1565,7 +1558,7 @@ namespace tinyclojure {
                             }
                             
                             if (maxArgs>=0) {
-                                if (elements.size() > maxArgs) {
+                                if (arguments.size() > maxArgs) {
                                     std::stringstream stringBuilder;
                                     stringBuilder   << "Function "
                                     << function->functionName()
@@ -1578,17 +1571,17 @@ namespace tinyclojure {
                                 }
                             }
                             
-                            Object *result = function->execute(elements, interpreterState);
+                            Object *result = function->execute(arguments, interpreterState);
                             if (result==NULL) {
                                 result = _gc->registerObject(new Object());
                             }
                             
                             return result;
                         } else {
-                            if (identifierObject->functionValueParameters().size()!=elements.size()) {
+                            if (identifierObject->functionValueParameters().size()!=arguments.size()) {
                                 std::stringstream stringBuilder;
                                 stringBuilder   << "Function requires "
-                                                << elements.size()
+                                                << arguments.size()
                                                 << " arguments"
                                                 << std::endl;
                                                 
@@ -1598,7 +1591,7 @@ namespace tinyclojure {
                             // build a new scope containing the passed arguments
                             InterpreterScope functionScope(interpreterState);
                             for (int parameterIndex=0; parameterIndex<identifierObject->functionValueParameters().size(); ++parameterIndex) {
-                                functionScope.setSymbolInScope(identifierObject->functionValueParameters()[parameterIndex]->stringValue(), recursiveEval(interpreterState, elements[parameterIndex]));
+                                functionScope.setSymbolInScope(identifierObject->functionValueParameters()[parameterIndex]->stringValue(), recursiveEval(interpreterState, arguments[parameterIndex]));
                             }
                             
                             return recursiveEval(&functionScope, identifierObject->functionValueCode());
