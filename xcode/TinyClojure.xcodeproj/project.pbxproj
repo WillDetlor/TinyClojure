@@ -26,6 +26,7 @@
 /* Begin PBXFileReference section */
 		185DBF91163DD91F00630C76 /* Readme.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Readme.md; path = ../Readme.md; sourceTree = "<group>"; };
 		18805580163300C400288E24 /* TinyClojure */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TinyClojure; sourceTree = BUILT_PRODUCTS_DIR; };
+		18A9A2B8163E624C00168A71 /* trip.clj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = trip.clj; path = ../tests/trip.clj; sourceTree = "<group>"; };
 		18F81BDC163DDACC00F7CCB8 /* TinyClojure.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TinyClojure.cpp; path = /Users/duncansteele/slidetocode/TinyClojure/src/TinyClojure.cpp; sourceTree = "<absolute>"; };
 		18F81BDE163DDAFB00F7CCB8 /* TinyClojure.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TinyClojure.h; path = /Users/duncansteele/slidetocode/TinyClojure/src/TinyClojure.h; sourceTree = "<absolute>"; };
 		18F81BDF163DDAFB00F7CCB8 /* tool.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = tool.cpp; path = /Users/duncansteele/slidetocode/TinyClojure/src/tool.cpp; sourceTree = "<absolute>"; };
@@ -45,6 +46,7 @@
 		18805575163300C400288E24 = {
 			isa = PBXGroup;
 			children = (
+				18A9A2B8163E624C00168A71 /* trip.clj */,
 				185DBF91163DD91F00630C76 /* Readme.md */,
 				18805583163300C400288E24 /* TinyClojure */,
 				18805581163300C400288E24 /* Products */,
