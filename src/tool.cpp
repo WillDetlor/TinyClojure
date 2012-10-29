@@ -35,8 +35,6 @@ void repl() {
 }
 
 int main(int argc, const char * argv[]) {
-    argc = 1;
-    
     bool startRepl = false;
     
     if (argc == 1) {

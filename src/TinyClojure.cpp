@@ -820,6 +820,20 @@ namespace tinyclojure {
                 return _evaluator->scopedEval(interpreterState, arguments[0]);
             }
         };
+        
+        class ReadLine : public ExtensionFunction {
+            std::string functionName() {
+                return "read-line";
+            }
+            
+            int requiredNumberOfArguments() {
+                return 0;
+            }
+            
+            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {                
+                return _gc->registerObject(new Object(_ioProxy->readLine()));
+            }
+        };
     }
     
 #pragma mark -
@@ -1289,6 +1303,7 @@ namespace tinyclojure {
         internalAddExtensionFunction(new core::Rest);
         internalAddExtensionFunction(new core::ReadString);
         internalAddExtensionFunction(new core::Eval);
+        internalAddExtensionFunction(new core::ReadLine);
     }
     
 #pragma mark parser

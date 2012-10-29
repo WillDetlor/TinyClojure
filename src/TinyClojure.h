@@ -95,6 +95,12 @@ namespace tinyclojure {
         void writeErr(std::string stringout) {
             std::cerr << stringout;
         }
+        
+        std::string readLine() {
+            std::string input;
+            std::getline(std::cin, input, '\n');
+            return input;
+        }
     protected:
         
     };
