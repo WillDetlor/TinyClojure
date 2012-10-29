@@ -411,6 +411,16 @@ namespace tinyclojure {
      */
     class Evaluator {
     public:
+        /**
+         * parse the passed string, returning the parsed object, or NULL on error
+         *
+         * this will parse the data into a tree of S Expressions.  This throws an exception if there is a parser error.
+         *
+         * @return either an object created by parsing the input, or NULL if nothing was found
+         */
+        virtual Object* parse(std::string stringin) = 0;
+
+        
         /// the internal recursive evaluator, this evaluates, but it does not scope the statements
         virtual Object* unscopedEval(InterpreterScope *interpreterState, Object *code) = 0;
 
@@ -488,7 +498,7 @@ namespace tinyclojure {
     class TinyClojure : Evaluator {
     public:
         /**
-         * parse the passed string, returning the parsed objects, or NULL on error
+         * parse the passed string, returning the parsed object, or NULL on error
          *
          * this will parse the data into a tree of S Expressions.  This throws an exception if there is a parser error.
          *

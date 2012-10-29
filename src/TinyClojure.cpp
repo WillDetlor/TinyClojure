@@ -704,6 +704,26 @@ namespace tinyclojure {
                 return consObject->consValueRight();
             }
         };
+        
+        class ReadString : public ExtensionFunction {
+            std::string functionName() {
+                return "read-string";
+            }
+            
+            int requiredNumberOfArguments() {
+                return 1;
+            }
+            
+            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+                Object *evaluatedArgument = _evaluator->scopedEval(interpreterState, arguments[0]);
+                
+                if (evaluatedArgument->type() != Object::kObjectTypeString) {
+                    throw Error("Argument to read-string must be a string");
+                }
+                
+                return _evaluator->parse(evaluatedArgument->stringValue());
+            }
+        };
     }
     
 #pragma mark -
@@ -1169,6 +1189,7 @@ namespace tinyclojure {
         internalAddExtensionFunction(new core::Fn);
         internalAddExtensionFunction(new core::First);
         internalAddExtensionFunction(new core::Rest);
+        internalAddExtensionFunction(new core::ReadString);
     }
     
 #pragma mark parser
