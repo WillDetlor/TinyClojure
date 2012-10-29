@@ -41,7 +41,7 @@ If you want to get involved, get in touch with me at slidetocode at gmail dot co
 Right now, the interpreter is "in progress", and it really just needs to get started, personal TODOs
 
 ###### Immediate tasks
-* swap all return NULLs for return nil object
+* basic eval in clojure itself (needs read-string)
 * ditch Evaluator in favour of a forward declaration
 * validate argument type arrays
 * option for pre-evaluated arguments
@@ -50,6 +50,7 @@ Right now, the interpreter is "in progress", and it really just needs to get sta
 * should ensure all Object properties are indeed immutable
 
 ###### Minor
+* swap all return NULLs for return nil object
 * shouldn't need to reset the interpreter when an extension function is added
 * work on the command line interface
 

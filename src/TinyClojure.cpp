@@ -523,7 +523,7 @@ namespace tinyclojure {
                     _ioProxy->writeOut("\n");
                 }
                 
-                return NULL;
+                return _gc->registerObject(new Object());
             }
         };
         
@@ -1236,7 +1236,7 @@ namespace tinyclojure {
         
         if (parseState.position >= parseState.parserString.length()) {
             // there is nothing here return NULL
-            return NULL;
+            return _gc->registerObject(new Object());
         }
         
         const int startPosition = parseState.position;
