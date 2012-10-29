@@ -780,7 +780,9 @@ namespace tinyclojure {
             
             case kObjectTypeFunction:
                 // leave the object to the gc
-                delete pointer.functionValue.argumentSymbols;
+                if (!builtinFunction()) {
+                    delete pointer.functionValue.argumentSymbols;
+                }
                 break;
 
             case kObjectTypeNumber:
