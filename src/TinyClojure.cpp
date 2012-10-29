@@ -242,6 +242,12 @@ namespace tinyclojure {
         return !operator==(rhs);
     }
     
+#pragma mark - ExtensionFunction
+    
+    bool ExtensionFunction::validateArgumentTypes(std::vector<Object::ObjectType>& typeArray) {
+        return true;
+    }
+    
 #pragma mark -
 #pragma mark Standard Library
     
@@ -1671,6 +1677,21 @@ namespace tinyclojure {
                                 }
                             }
                             
+                            std::vector<Object::ObjectType> types;
+                            for (int parameterIndex=0; parameterIndex<arguments.size(); ++parameterIndex) {
+                                types.push_back(arguments[parameterIndex]->type());
+                            }
+                            
+                            if (!function->validateArgumentTypes(types)) {
+                                std::stringstream stringBuilder;
+                                stringBuilder   << "Function "
+                                                << function->functionName()
+                                                << "'s type signature does not match that which is passed"
+                                                << std::endl;
+
+                                throw Error(stringBuilder.str());
+                            }
+                            
                             Object *result = function->execute(arguments, interpreterState);
                             if (result==NULL) {
                                 result = _gc->registerObject(new Object());
@@ -1687,7 +1708,7 @@ namespace tinyclojure {
                                                 
                                 throw Error(stringBuilder.str());
                             }
-                            
+                                                                                    
                             // build a new scope containing the passed arguments
                             InterpreterScope functionScope(interpreterState);
                             for (int parameterIndex=0; parameterIndex<identifierObject->functionValueParameters().size(); ++parameterIndex) {

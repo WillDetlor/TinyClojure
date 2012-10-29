@@ -434,6 +434,12 @@ namespace tinyclojure {
         }
         
         /**
+         * validate the argument types
+         *
+         */
+        bool validateArgumentTypes(std::vector<Object::ObjectType>& typeArray);
+        
+        /**
          * required number of arguments to this function
          *
          * return -1 if there is no restriction
