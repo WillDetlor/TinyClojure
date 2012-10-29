@@ -724,6 +724,20 @@ namespace tinyclojure {
                 return _evaluator->parse(evaluatedArgument->stringValue());
             }
         };
+        
+        class Eval : public ExtensionFunction {
+            std::string functionName() {
+                return "eval";
+            }
+            
+            int requiredNumberOfArguments() {
+                return 1;
+            }
+            
+            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+                return _evaluator->scopedEval(interpreterState, _evaluator->scopedEval(interpreterState, arguments[0]));
+            }
+        };
     }
     
 #pragma mark -
@@ -1190,6 +1204,7 @@ namespace tinyclojure {
         internalAddExtensionFunction(new core::First);
         internalAddExtensionFunction(new core::Rest);
         internalAddExtensionFunction(new core::ReadString);
+        internalAddExtensionFunction(new core::Eval);
     }
     
 #pragma mark parser
