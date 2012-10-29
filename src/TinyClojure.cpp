@@ -606,15 +606,8 @@ namespace tinyclojure {
             }
         };
         
-        class Fn : public ExtensionFunction {
-            std::string functionName() {
-                return "fn";
-            }
-            
-            int minimumNumberOfArguments() {
-                return 2;
-            }
-            
+        class Closure : public ExtensionFunction {
+        public:
             bool preEvaluateArguments() {
                 return false;
             }
@@ -631,10 +624,10 @@ namespace tinyclojure {
                         
                     case Object::kObjectTypeCons: {
                         Object  *left = captureState(object->consValueLeft(), interpreterState),
-                                *right = captureState(object->consValueRight(), interpreterState);
+                        *right = captureState(object->consValueRight(), interpreterState);
                         
                         return _gc->registerObject(new Object(left, right));
-                        } break;
+                    } break;
                         
                     case Object::kObjectTypeVector: {
                         std::vector<Object *> newVector;
@@ -644,7 +637,7 @@ namespace tinyclojure {
                         }
                         
                         return _gc->registerObject(new Object(newVector));
-                        } break;
+                    } break;
                         
                     case Object::kObjectTypeSymbol: {
                         Object *lookedUpValue = interpreterState->lookupSymbol(object->stringValue());
@@ -654,18 +647,13 @@ namespace tinyclojure {
                         } else {
                             return object;
                         }
-                        } break;
+                    } break;
                 }
             }
             
-            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
-                Object * arglist = arguments[0];
-                
-                // remove the initial argument, just leaving the function body
-                arguments.erase(arguments.begin());
-                
+            void constructArgumentList(Object *arglist, std::vector<Object*>& argumentSymbols) {
                 // construct the argument list
-                std::vector<Object*> parameterSymbols, argumentSymbols;
+                std::vector<Object*> parameterSymbols;
                 bool validArgumentList = false;
                 if (arglist->buildList(parameterSymbols)) {
                     if (parameterSymbols.size()) {
@@ -673,10 +661,7 @@ namespace tinyclojure {
                             if (parameterSymbols[0]->stringValue()=="vector") {
                                 validArgumentList = true;
                                 
-                                // remove the leading "vector" symbol
-                                parameterSymbols.erase(parameterSymbols.begin());
-                                
-                                // grab each individual argument
+                                // grab each individual argument following the "vector symbol"
                                 for (int argumentIndex=1; argumentIndex < parameterSymbols.size(); ++argumentIndex) {
                                     if (parameterSymbols[argumentIndex]->type() == Object::kObjectTypeSymbol) {
                                         argumentSymbols.push_back(parameterSymbols[argumentIndex]);
@@ -692,14 +677,76 @@ namespace tinyclojure {
                 if (!validArgumentList) {
                     throw Error("Could not build argument list");
                 }
+            }
+        };
+        
+        class Defn : public Closure {
+        public:
+            std::string functionName() {
+                return "defn";
+            }
+            
+            int minimumNumberOfArguments() {
+                return 3;
+            }
+            
+            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+                // symbol
+                Object  *symbol = arguments[0],
+                        *arglist = arguments[1];
                 
+                if (symbol->type()!=Object::kObjectTypeSymbol) {
+                    throw Error("first argument to defn must be a symbol");
+                }
+                
+                // construct an argument list
+                std::vector<Object*> argumentSymbols;
+                constructArgumentList(arglist, argumentSymbols);
+                
+                // remove the initial argument and symbol, just leaving the function body
+                arguments.erase(arguments.begin());
+                arguments.erase(arguments.begin());
+                
+                // capture the arguments
                 std::vector<Object*> capturedArguments;
                 capturedArguments.push_back(_gc->registerObject(new Object("do", true)));
                 for (int argumentIndex = 0; argumentIndex < arguments.size(); ++argumentIndex) {
                     capturedArguments.push_back(captureState(arguments[argumentIndex], interpreterState));
                 }
                 
-                return _gc->registerObject(new Object(_evaluator->listObject(capturedArguments), parameterSymbols));
+                Object *lambda = _gc->registerObject(new Object(_evaluator->listObject(capturedArguments), argumentSymbols));
+                
+                interpreterState->setSymbolInScope(symbol->stringValue(), lambda);
+                
+                return _gc->registerObject(new Object());
+            }
+        };
+        
+        class Fn : public Closure {
+            std::string functionName() {
+                return "fn";
+            }
+            
+            int minimumNumberOfArguments() {
+                return 2;
+            }
+                        
+            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+                // construct an argument list
+                std::vector<Object*> argumentSymbols;
+                constructArgumentList(arguments[0], argumentSymbols);
+                
+                // remove the initial argument, just leaving the function body
+                arguments.erase(arguments.begin());
+
+                // capture the arguments
+                std::vector<Object*> capturedArguments;
+                capturedArguments.push_back(_gc->registerObject(new Object("do", true)));
+                for (int argumentIndex = 0; argumentIndex < arguments.size(); ++argumentIndex) {
+                    capturedArguments.push_back(captureState(arguments[argumentIndex], interpreterState));
+                }
+                
+                return _gc->registerObject(new Object(_evaluator->listObject(capturedArguments), argumentSymbols));
             }
         };
         
@@ -1236,6 +1283,7 @@ namespace tinyclojure {
         internalAddExtensionFunction(new core::Do);
         internalAddExtensionFunction(new core::Vector);
         internalAddExtensionFunction(new core::Fn);
+        internalAddExtensionFunction(new core::Defn);
         internalAddExtensionFunction(new core::First);
         internalAddExtensionFunction(new core::Rest);
         internalAddExtensionFunction(new core::ReadString);
