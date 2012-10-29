@@ -446,6 +446,9 @@ namespace tinyclojure {
          */
         virtual int requiredNumberOfArguments();
         
+        /// perform any setup tasks on this functions
+        void setup();
+        
         /// fill the argument type array
         virtual void fillTypeArray() {}
         

@@ -268,6 +268,10 @@ namespace tinyclojure {
         return -1;
     }
 
+    void ExtensionFunction::setup() {
+        _typeArray.clear();
+        fillTypeArray();
+    }
     
 #pragma mark -
 #pragma mark Standard Library
@@ -751,10 +755,6 @@ namespace tinyclojure {
             }
             
             Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
-                if (arguments[0]->type() != Object::kObjectTypeString) {
-                    throw Error("Argument to read-string must be a string");
-                }
-                
                 return _evaluator->parse(arguments[0]->stringValue());
             }
         };
@@ -1199,6 +1199,7 @@ namespace tinyclojure {
         function->setEvaluator(this);
         function->setGarbageCollector(_gc);
         function->setIOProxy(_ioProxy);
+        function->setup();
         
         _extensionFunctions.push_back(function);        
     }
