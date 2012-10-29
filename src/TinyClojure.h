@@ -101,6 +101,7 @@ namespace tinyclojure {
 
     /// a forward declaration to allow for an ExtensionFunction pointer in Object
     class ExtensionFunction;
+    class TinyClojure;
     
     /**
      * class to represent Clojure objects
@@ -404,37 +405,7 @@ namespace tinyclojure {
         GarbageCollector *_gc;
         Object *_object;
     };
-    
-    /**
-     * an abstract base class so that TinyClojure can provide callbacks to the ExtensionFunction objects
-     * TODO maybe I'd be better off using a forward declaration, this interface is not "real"
-     */
-    class Evaluator {
-    public:
-        /**
-         * parse the passed string, returning the parsed object, or NULL on error
-         *
-         * this will parse the data into a tree of S Expressions.  This throws an exception if there is a parser error.
-         *
-         * @return either an object created by parsing the input, or NULL if nothing was found
-         */
-        virtual Object* parse(std::string stringin) = 0;
-
         
-        /// the internal recursive evaluator, this evaluates, but it does not scope the statements
-        virtual Object* unscopedEval(InterpreterScope *interpreterState, Object *code) = 0;
-
-        /// the internal recursive evaluator, this puts statements in a scope and evaluates them
-        virtual Object* scopedEval(InterpreterScope *interpreterState, Object *code) = 0;
-        
-        /**
-         * create a list from a std::vector
-         *
-         * this is here, not in the Object constructor because it needs access to the garbage collector
-         */
-        virtual Object* listObject(std::vector<Object*> list) = 0;
-    };
-    
     /**
      * An abstract base class for all interpreter functions
      *
@@ -454,7 +425,7 @@ namespace tinyclojure {
             _gc = gc;
         }
         
-        void setEvaluator(Evaluator *evaluator) {
+        void setEvaluator(TinyClojure *evaluator) {
             _evaluator = evaluator;
         }
         
@@ -491,12 +462,19 @@ namespace tinyclojure {
         
     protected:
         GarbageCollector *_gc;
-        Evaluator *_evaluator;
+        TinyClojure *_evaluator;
         IOProxy *_ioProxy;
     };
     
-    class TinyClojure : Evaluator {
-    public:
+    class TinyClojure {
+    public:        
+        /**
+         * create a list from a std::vector
+         *
+         * this is here, not in the Object constructor because it needs access to the garbage collector
+         */
+        Object* listObject(std::vector<Object*> list);
+        
         /**
          * parse the passed string, returning the parsed object, or NULL on error
          *
@@ -514,9 +492,6 @@ namespace tinyclojure {
          */
         Object* eval(Object* object);
         
-        // see Evalutor for docs
-        Object* listObject(std::vector<Object*> list);
-        
         /**
          * default constructor
          */
@@ -530,10 +505,10 @@ namespace tinyclojure {
         /// call this to load all extension functions, override it to change which functions are loaded
         virtual void loadExtensionFunctions();
         
-        /// the internal recursive evaluator, see eval for documentations
+        /// the internal recursive evaluator, this evaluates, but it does not scope the statements
         Object* unscopedEval(InterpreterScope *interpreterState, Object *code);
         
-        /// place a scope around unscopedEval
+        /// the internal recursive evaluator, this puts statements in a scope and evaluates them
         Object* scopedEval(InterpreterScope *interpreterState, Object *code);
         
         /// this erases the persistent scope, removing all symbols and objects
