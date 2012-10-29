@@ -286,23 +286,24 @@ namespace tinyclojure {
             }
             
             Object* execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
-                // TODO refactor
+                bool first = true;
                 
-                Number *values = new Number[arguments.size()];
+                Number current;
+
                 for (int argumentIndex = 0; argumentIndex < arguments.size(); ++argumentIndex) {
                     Object *evaluatedArgument = arguments[argumentIndex];
                     if (evaluatedArgument->type() != Object::kObjectTypeNumber) {
                         throw Error("Arithmetic functions require all arguments to be numbers");
                     }
-                    values[argumentIndex] = evaluatedArgument->numberValue();
+                    
+                    if (first) {
+                        current = evaluatedArgument->numberValue();
+                        first = false;
+                    } else {
+                        current = numberOperation(current, evaluatedArgument->numberValue());
+                    }
                 }
                 
-                Number current = values[0];
-                for (int argumentIndex = 1; argumentIndex < arguments.size(); ++argumentIndex) {
-                    current = numberOperation(current, values[argumentIndex]);
-                }
-                delete[] values;
-
                 return _gc->registerObject(new Object(current));
             }
         };
