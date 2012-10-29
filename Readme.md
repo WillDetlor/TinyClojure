@@ -43,7 +43,6 @@ Right now, the interpreter is "in progress", and it really just needs to get sta
 ###### Immediate tasks
 * basic eval in clojure itself (needs read-string)
 * validate argument type arrays
-* option for pre-evaluated arguments
 * write a trip.clj for current behaviours
 * write (defn )
 * should ensure all Object properties are indeed immutable

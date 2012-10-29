@@ -444,9 +444,10 @@ namespace tinyclojure {
          *
          * return -1 if there is no restriction
          */
-        virtual int requiredNumberOfArguments() {
-            return -1;
-        }
+        virtual int requiredNumberOfArguments();
+        
+        /// fill the argument type array
+        virtual void fillTypeArray() {}
         
         /**
          * this function requires a number of arguments <= the return value of this function
@@ -466,7 +467,19 @@ namespace tinyclojure {
             return requiredNumberOfArguments();
         }
         
+        /// evaluate arguments before passing them to the Extension Function
+        virtual bool preEvaluateArguments() {
+            return true;
+        }
+        
     protected:
+        /**
+         * an array of types that must be matched by the arguments to this function
+         * 
+         * it will only be considered if there are any elements inside it
+         */
+        std::vector<Object::ObjectType> _typeArray;
+        
         GarbageCollector *_gc;
         TinyClojure *_evaluator;
         IOProxy *_ioProxy;
