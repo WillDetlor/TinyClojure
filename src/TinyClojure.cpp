@@ -661,21 +661,28 @@ namespace tinyclojure {
                         if (parameterSymbols[0]->type()==Object::kObjectTypeSymbol) {
                             if (parameterSymbols[0]->stringValue()=="vector") {
                                 validArgumentList = true;
-                                
-                                // grab each individual argument following the "vector symbol"
-                                for (int argumentIndex=1; argumentIndex < parameterSymbols.size(); ++argumentIndex) {
-                                    if (parameterSymbols[argumentIndex]->type() == Object::kObjectTypeSymbol) {
-                                        argumentSymbols.push_back(parameterSymbols[argumentIndex]);
-                                    } else {
-                                        validArgumentList = false;
-                                    }
+                            }
+                        } else if (parameterSymbols[0]->type()==Object::kObjectTypeFunction) {
+                            if (parameterSymbols[0]->builtinFunction()) {
+                                if (parameterSymbols[0]->functionValueExtensionFunction()->functionName() == "vector") {
+                                    validArgumentList = true;
                                 }
                             }
                         }
+                        
                     }
                 }
                 
-                if (!validArgumentList) {
+                if (validArgumentList) {
+                    // grab each individual argument following the "vector symbol"
+                    for (int argumentIndex=1; argumentIndex < parameterSymbols.size(); ++argumentIndex) {
+                        if (parameterSymbols[argumentIndex]->type() == Object::kObjectTypeSymbol) {
+                            argumentSymbols.push_back(parameterSymbols[argumentIndex]);
+                        } else {
+                            validArgumentList = false;
+                        }
+                    }
+                } else {
                     throw Error("Could not build argument list");
                 }
             }
