@@ -41,10 +41,15 @@ If you want to get involved, get in touch with me at slidetocode at gmail dot co
 Right now, the interpreter is "in progress", and it really just needs to get started, personal TODOs
 
 ###### Immediate tasks
-* refactor to ensure separate types for both types of function
 * basic eval in clojure itself (needs read-string)
 * write a trip.clj for current behaviours
 * should ensure all Object properties are indeed immutable
+
+###### Forms to implement
+* cond
+* let
+* map
+
 
 ###### Minor
 * swap all return NULLs for return nil object

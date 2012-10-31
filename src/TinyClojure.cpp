@@ -619,7 +619,8 @@ namespace tinyclojure {
                     case Object::kObjectTypeNil:
                     case Object::kObjectTypeNumber:
                     case Object::kObjectTypeString:
-                    case Object::kObjectTypeFunction:
+                    case Object::kObjectTypeBuiltinFunction:
+                    case Object::kObjectTypeClosure:
                         return object;
                         break;
                         
@@ -662,11 +663,9 @@ namespace tinyclojure {
                             if (parameterSymbols[0]->stringValue()=="vector") {
                                 validArgumentList = true;
                             }
-                        } else if (parameterSymbols[0]->type()==Object::kObjectTypeFunction) {
-                            if (parameterSymbols[0]->builtinFunction()) {
-                                if (parameterSymbols[0]->functionValueExtensionFunction()->functionName() == "vector") {
-                                    validArgumentList = true;
-                                }
+                        } else if (parameterSymbols[0]->type()==Object::kObjectTypeBuiltinFunction) {
+                            if (parameterSymbols[0]->functionValueExtensionFunction()->functionName() == "vector") {
+                                validArgumentList = true;
                             }
                         }
                         
@@ -892,16 +891,14 @@ namespace tinyclojure {
     }
     
     Object::Object(Object *code, std::vector<Object*> arguments) {
-        _type = kObjectTypeFunction;
+        _type = kObjectTypeClosure;
         pointer.functionValue.objectPointer = code;
         pointer.functionValue.argumentSymbols = new std::vector<Object*>(arguments);
-        pointer.functionValue.extensionFunctionPointer = NULL;
     }
     
     Object::Object(ExtensionFunction *function) {
-        _type = kObjectTypeFunction;
-        pointer.functionValue.objectPointer = NULL;
-        pointer.functionValue.extensionFunctionPointer = function;
+        _type = kObjectTypeBuiltinFunction;
+        pointer.builtinFunctionValue.extensionFunctionPointer = function;
     }
     
     Object::~Object() {
@@ -915,11 +912,9 @@ namespace tinyclojure {
                 delete pointer.vectorPointer;
                 break;
             
-            case kObjectTypeFunction:
-                // leave the object to the gc
-                if (!builtinFunction()) {
-                    delete pointer.functionValue.argumentSymbols;
-                }
+            case kObjectTypeClosure:
+                // leave the Objects to the gc
+                delete pointer.functionValue.argumentSymbols;
                 break;
 
             case kObjectTypeNumber:
@@ -928,6 +923,7 @@ namespace tinyclojure {
                 
             case kObjectTypeCons:
                 // it isn't our business deleting "unused" objects, that is for the GC
+            case kObjectTypeBuiltinFunction:
             case kObjectTypeBoolean:
             case kObjectTypeNil:
                 // nothing need be done
@@ -967,12 +963,12 @@ namespace tinyclojure {
                 }
                 break;
                 
-            case kObjectTypeFunction:
-                if (builtinFunction()) {
-                    return pointer.functionValue.extensionFunctionPointer->functionName() == rhs.pointer.functionValue.extensionFunctionPointer->functionName();
-                } else {
-                    return *pointer.functionValue.objectPointer == *rhs.pointer.functionValue.objectPointer;
-                }
+            case kObjectTypeBuiltinFunction:
+                return pointer.builtinFunctionValue.extensionFunctionPointer->functionName() == rhs.pointer.builtinFunctionValue.extensionFunctionPointer->functionName();
+                break;
+                
+            case kObjectTypeClosure:
+                return *pointer.functionValue.objectPointer == *rhs.pointer.functionValue.objectPointer;
                 break;
  
             case kObjectTypeSymbol:
@@ -999,7 +995,7 @@ namespace tinyclojure {
     }
 
     ExtensionFunction*& Object::functionValueExtensionFunction() {
-        return pointer.functionValue.extensionFunctionPointer;
+        return pointer.builtinFunctionValue.extensionFunctionPointer;
     }
     
     std::vector<Object*>& Object::functionValueParameters() {
@@ -1082,28 +1078,20 @@ namespace tinyclojure {
         }
     }
     
-    bool Object::builtinFunction() {
-        if (pointer.functionValue.objectPointer) {
-            return false;
-        }
-        
-        return true;
-    }
-    
     std::string Object::stringRepresentation(bool expandList) {
         std::stringstream stringBuilder;
         
         switch (_type) {
-            case kObjectTypeFunction:
-                if (builtinFunction()) {
-                    stringBuilder   << "<<<builtin "
-                                    << pointer.functionValue.extensionFunctionPointer->functionName()
-                                    << ">>>";
-                } else {
-                    stringBuilder   << "<<<fn "
-                                    << pointer.functionValue.objectPointer->stringRepresentation()
-                                    << ">>>";
-                }
+            case kObjectTypeBuiltinFunction:
+                stringBuilder   << "<<<builtin "
+                                << pointer.builtinFunctionValue.extensionFunctionPointer->functionName()
+                                << ">>>";
+                break;
+                
+            case kObjectTypeClosure:
+                stringBuilder   << "<<<fn "
+                                << pointer.functionValue.objectPointer->stringRepresentation()
+                                << ">>>";
                 break;
                 
             case kObjectTypeString:
@@ -1707,7 +1695,8 @@ namespace tinyclojure {
             case Object::kObjectTypeNumber:
             case Object::kObjectTypeString:
             case Object::kObjectTypeBoolean:
-            case Object::kObjectTypeFunction:
+            case Object::kObjectTypeBuiltinFunction:
+            case Object::kObjectTypeClosure:
                 return code;
                 break;
                 
@@ -1742,90 +1731,88 @@ namespace tinyclojure {
                     // remove the identifier so that arguments contains just the arguments to the function
                     arguments.erase(arguments.begin());
                     
-                    if (identifierObject->type()==Object::kObjectTypeFunction) {
-                        if (identifierObject->builtinFunction()) {
-                            ExtensionFunction *function = identifierObject->functionValueExtensionFunction();
-                            
-                            int minArgs = function->minimumNumberOfArguments(),
-                                maxArgs = function->maximumNumberOfArguments();
-                            
-                            if (minArgs>=0) {
-                                if (arguments.size() < minArgs) {
-                                    std::stringstream stringBuilder;
-                                    stringBuilder   << "Function "
-                                                    << function->functionName()
-                                                    << " requires at least "
-                                                    << minArgs
-                                                    << " arguments"
-                                                    << std::endl;
-                                    
-                                    throw Error(stringBuilder.str());
-                                }
-                            }
-                            
-                            if (maxArgs>=0) {
-                                if (arguments.size() > maxArgs) {
-                                    std::stringstream stringBuilder;
-                                    stringBuilder   << "Function "
-                                                    << function->functionName()
-                                                    << " requires no more than "
-                                                    << maxArgs
-                                                    << " arguments"
-                                                    << std::endl;
-                                    
-                                    throw Error(stringBuilder.str());
-                                }
-                            }
-                            
-                            std::vector<Object::ObjectType> types;
-                            for (int parameterIndex=0; parameterIndex<arguments.size(); ++parameterIndex) {
-                                types.push_back(arguments[parameterIndex]->type());
-                            }
-                            
-                            if (!function->validateArgumentTypes(types)) {
+                    if (identifierObject->type()==Object::kObjectTypeBuiltinFunction) {
+                        ExtensionFunction *function = identifierObject->functionValueExtensionFunction();
+                        
+                        int minArgs = function->minimumNumberOfArguments(),
+                            maxArgs = function->maximumNumberOfArguments();
+                        
+                        if (minArgs>=0) {
+                            if (arguments.size() < minArgs) {
                                 std::stringstream stringBuilder;
                                 stringBuilder   << "Function "
                                                 << function->functionName()
-                                                << "'s type signature does not match that which is passed"
-                                                << std::endl;
-
-                                throw Error(stringBuilder.str());
-                            }
-                            
-                            std::vector<Object*> preparedArguments;
-                            if (function->preEvaluateArguments()) {
-                                for (int argumentIndex=0; argumentIndex<arguments.size(); ++argumentIndex) {
-                                    preparedArguments.push_back(scopedEval(interpreterState, arguments[argumentIndex]));
-                                }
-                            } else {
-                                preparedArguments = arguments;
-                            }
-                            
-                            Object *result = function->execute(preparedArguments, interpreterState);
-                            if (result==NULL) {
-                                result = _gc->registerObject(new Object());
-                            }
-                            
-                            return result;
-                        } else {
-                            if (identifierObject->functionValueParameters().size()!=arguments.size()) {
-                                std::stringstream stringBuilder;
-                                stringBuilder   << "Function requires "
-                                                << arguments.size()
+                                                << " requires at least "
+                                                << minArgs
                                                 << " arguments"
                                                 << std::endl;
-                                                
+                                
                                 throw Error(stringBuilder.str());
                             }
-                                                                                    
-                            // build a new scope containing the passed arguments
-                            InterpreterScope functionScope(interpreterState);
-                            for (int parameterIndex=0; parameterIndex<identifierObject->functionValueParameters().size(); ++parameterIndex) {
-                                functionScope.setSymbolInScope(identifierObject->functionValueParameters()[parameterIndex]->stringValue(), scopedEval(interpreterState, arguments[parameterIndex]));
-                            }
-                            
-                            return scopedEval(&functionScope, identifierObject->functionValueCode());
                         }
+                        
+                        if (maxArgs>=0) {
+                            if (arguments.size() > maxArgs) {
+                                std::stringstream stringBuilder;
+                                stringBuilder   << "Function "
+                                                << function->functionName()
+                                                << " requires no more than "
+                                                << maxArgs
+                                                << " arguments"
+                                                << std::endl;
+                                
+                                throw Error(stringBuilder.str());
+                            }
+                        }
+                        
+                        std::vector<Object::ObjectType> types;
+                        for (int parameterIndex=0; parameterIndex<arguments.size(); ++parameterIndex) {
+                            types.push_back(arguments[parameterIndex]->type());
+                        }
+                        
+                        if (!function->validateArgumentTypes(types)) {
+                            std::stringstream stringBuilder;
+                            stringBuilder   << "Function "
+                                            << function->functionName()
+                                            << "'s type signature does not match that which is passed"
+                                            << std::endl;
+
+                            throw Error(stringBuilder.str());
+                        }
+                        
+                        std::vector<Object*> preparedArguments;
+                        if (function->preEvaluateArguments()) {
+                            for (int argumentIndex=0; argumentIndex<arguments.size(); ++argumentIndex) {
+                                preparedArguments.push_back(scopedEval(interpreterState, arguments[argumentIndex]));
+                            }
+                        } else {
+                            preparedArguments = arguments;
+                        }
+                        
+                        Object *result = function->execute(preparedArguments, interpreterState);
+                        if (result==NULL) {
+                            result = _gc->registerObject(new Object());
+                        }
+                        
+                        return result;
+                    } else if (identifierObject->type() == Object::kObjectTypeClosure) {
+                        if (identifierObject->functionValueParameters().size()!=arguments.size()) {
+                            std::stringstream stringBuilder;
+                            stringBuilder   << "Function requires "
+                                            << arguments.size()
+                                            << " arguments"
+                                            << std::endl;
+                                            
+                            throw Error(stringBuilder.str());
+                        }
+                                                                                
+                        // build a new scope containing the passed arguments
+                        InterpreterScope functionScope(interpreterState);
+                        for (int parameterIndex=0; parameterIndex<identifierObject->functionValueParameters().size(); ++parameterIndex) {
+                            functionScope.setSymbolInScope(identifierObject->functionValueParameters()[parameterIndex]->stringValue(), scopedEval(interpreterState, arguments[parameterIndex]));
+                        }
+                        
+                        return scopedEval(&functionScope, identifierObject->functionValueCode());
                     } else {
                         throw Error("An executable S Expression must begin with a function object");
                     }

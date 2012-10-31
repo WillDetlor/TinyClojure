@@ -122,7 +122,8 @@ namespace tinyclojure {
             kObjectTypeNumber,
             kObjectTypeBoolean,
             kObjectTypeVector,
-            kObjectTypeFunction,
+            kObjectTypeBuiltinFunction,
+            kObjectTypeClosure,
         } ObjectType;
         
         /// construct either a symbol (if symbol=true) or a string object otherwise
@@ -156,9 +157,6 @@ namespace tinyclojure {
         Object(ExtensionFunction *function);
         
         ~Object();
-        
-        /// given that this is an extension function, is this a builtin type?
-        bool builtinFunction();
         
         /// this object's type
         ObjectType type() const { return _type; }
@@ -221,8 +219,11 @@ namespace tinyclojure {
             struct {
                 Object *objectPointer;
                 std::vector<Object*>* argumentSymbols;
-                ExtensionFunction *extensionFunctionPointer;
             } functionValue;
+            
+            struct {
+                ExtensionFunction *extensionFunctionPointer;
+            } builtinFunctionValue;
             
             std::vector<Object*>* vectorPointer;
             
