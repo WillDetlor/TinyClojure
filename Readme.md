@@ -42,11 +42,10 @@ Right now, the interpreter is "in progress", and it really just needs to get sta
 
 ###### Immediate tasks
 * basic eval in clojure itself (needs read-string)
-* write a trip.clj for current behaviours
 * should ensure all Object properties are indeed immutable
+* sort the :else case in a (cond ) statement
 
 ###### Forms to implement
-* cond
 * let
 * map
 
@@ -74,8 +73,9 @@ Roughly, my coding conventions are
 * Keep everything in the "tinyclojure" namespace please.
 * Datatypes start with a capital, member variables with an underscore.
 * Indent by four spaces, no tabs.
-* No macros (C++ of course).
+* No macros (I'm talking about the C++ not the Lisp of course).
 * Document all interfaces with Doxygen style comments.
+* Add each feature to trip.clj (in as diabolic a manner as you please)
 * All variable and method names must be descriptive.  No one letter variables please.  Comment code when necessary, but if you can clarify the operation of your code through the method and variables names instead, that is better.
 * Git
     * If possible no broken commits, it is a disaster when git bisecting.
@@ -90,6 +90,14 @@ Less defined principles are
     * Execution speed.  I'm willing to relax the small size rule a little for large performance gains, but this interpreter is only meant for small scripts.  Execution speed just isn't that important.
 * If you want to add functionality that violates the golden rule, then as long as it can be turned on and off with an #ifdef then that is fine.
 
+
+### Hacking TinyClojure
+
+Tiny Clojure is designed to be as hackable as possible, and all interfaces are documented with Doxygen to make this as accessible as possible.  However here are a few bullet points to help you before you dive into the source.
+
+* `Object` is the fundamental dynamic type in TinyClojure.  All code, data and functions (whether closure or builtins) are instances of this type.  The convention is that when creating any object, it must be registered with the garbage collector.
+* Parsing and Evaluation are handled by The `TinyClojure` object.  Pass a string to the parse function and it will return the parsed source code as a data structure.  To execute this code, call eval on that data.  Internally there is both a scoped and an unscoped eval function. Scoped eval is a wrapper around unscoped eval that creates a new scope before evaluating the code.  By default use this as it will 
+* Interpreter scope objects represent the current "scope", essentially these are 
 
 ### Contact
 

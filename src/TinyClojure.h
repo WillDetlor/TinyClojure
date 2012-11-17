@@ -109,6 +109,10 @@ namespace tinyclojure {
     class ExtensionFunction;
     class TinyClojure;
     
+    /// define the repeatedly used object list with a forward declaration
+    class Object;
+    typedef std::vector<Object*> ObjectList;
+    
     /**
      * class to represent Clojure objects
      */
@@ -148,10 +152,10 @@ namespace tinyclojure {
         Object(Object *left, Object *right);
         
         /// construct a vector
-        Object(std::vector<Object*> objects);
+        Object(ObjectList objects);
         
         /// construct a function
-        Object(Object *code, std::vector<Object*> arguments);
+        Object(Object *code, ObjectList arguments);
         
         /// construct an extension function
         Object(ExtensionFunction *function);
@@ -171,7 +175,7 @@ namespace tinyclojure {
         std::string& stringValue();
         
         /// return a reference to this object as a vector
-        std::vector<Object*>& vectorValue();
+        ObjectList& vectorValue();
         
         /// accessor for code part of function value
         Object*& functionValueCode();
@@ -180,7 +184,7 @@ namespace tinyclojure {
         ExtensionFunction*& functionValueExtensionFunction();
         
         /// accessor for parameter list part of function value
-        std::vector<Object*>& functionValueParameters();
+        ObjectList& functionValueParameters();
         
         /// accessor for car
         Object*& consValueLeft();
@@ -198,7 +202,7 @@ namespace tinyclojure {
         bool coerceBoolean();
         
         /// build list, returning true and placing objects in the vector if it is a list, false otherwise
-        bool buildList(std::vector<Object*>& results);
+        bool buildList(ObjectList& results);
 
         /// build list, returning true if it is a list, false otherwise
         bool isList();
@@ -218,21 +222,20 @@ namespace tinyclojure {
             // if objectPointer is nil, interpret this as an extension function based function, else interpret as a user lambda
             struct {
                 Object *objectPointer;
-                std::vector<Object*>* argumentSymbols;
+                ObjectList* argumentSymbols;
             } functionValue;
             
             struct {
                 ExtensionFunction *extensionFunctionPointer;
             } builtinFunctionValue;
             
-            std::vector<Object*>* vectorPointer;
+            ObjectList* vectorPointer;
             
             Number *numberPointer;
             
             bool booleanValue;
         } pointer;
     };
-    
     
     /**
      * a very simple garbage collector for TinyClojure objects
@@ -424,7 +427,7 @@ namespace tinyclojure {
         virtual std::string functionName() { return ""; };
         
         /// the meat of the function happens in here, pass arguments and what it needs to evaluate
-        virtual Object* execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
+        virtual Object* execute(ObjectList arguments, InterpreterScope* interpreterState) {
             return NULL;
         }
         
@@ -502,7 +505,7 @@ namespace tinyclojure {
          *
          * this is here, not in the Object constructor because it needs access to the garbage collector
          */
-        Object* listObject(std::vector<Object*> list);
+        Object* listObject(ObjectList list);
         
         /**
          * parse the passed string, returning the parsed object, or NULL on error
@@ -514,7 +517,7 @@ namespace tinyclojure {
         Object* parse(std::string stringin);
         
         /// parse all code in a string
-        void parseAll(std::string codeText, std::vector<Object*>& expressions);
+        void parseAll(std::string codeText, ObjectList& expressions);
         
         /**
          * evaluate the code passed above

@@ -285,7 +285,7 @@ namespace tinyclojure {
                 return 1;
             }
             
-            Object* execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
+            Object* execute(ObjectList arguments, InterpreterScope* interpreterState) {
                 bool first = true;
                 
                 Number current;
@@ -365,7 +365,7 @@ namespace tinyclojure {
                 return false;
             }
             
-            Object *execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
+            Object *execute(ObjectList arguments, InterpreterScope* interpreterState) {
                 Object  *condition = arguments[0],
                         *trueBranch = arguments[1],
                         *falseBranch = NULL;
@@ -398,7 +398,7 @@ namespace tinyclojure {
                 return false;
             }
             
-            Object *execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
+            Object *execute(ObjectList arguments, InterpreterScope* interpreterState) {
                 Object *lhs = _evaluator->scopedEval(interpreterState, arguments[0]);
                 
                 for (int argumentIndex = 1; argumentIndex < arguments.size(); ++argumentIndex) {
@@ -426,7 +426,7 @@ namespace tinyclojure {
                 return false;
             }
             
-            Object *execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
+            Object *execute(ObjectList arguments, InterpreterScope* interpreterState) {
                 Object *lhs = _evaluator->scopedEval(interpreterState, arguments[0]);
                 
                 for (int argumentIndex = 1; argumentIndex < arguments.size(); ++argumentIndex) {
@@ -442,8 +442,8 @@ namespace tinyclojure {
         };
         
         class NumericInequality : public ExtensionFunction {
-            Object *execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
-                std::vector<Object*> evaluatedArguments;
+            Object *execute(ObjectList arguments, InterpreterScope* interpreterState) {
+                ObjectList evaluatedArguments;
                 for (int argumentIndex=0; argumentIndex<arguments.size(); ++argumentIndex) {
                     evaluatedArguments.push_back(_evaluator->scopedEval(interpreterState, arguments[argumentIndex]));
                     
@@ -524,7 +524,7 @@ namespace tinyclojure {
                 return "vector";
             }
             
-            Object* execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+            Object* execute(ObjectList arguments, InterpreterScope *interpreterState) {
                 return _gc->registerObject(new Object(arguments));
             }
         };
@@ -534,7 +534,7 @@ namespace tinyclojure {
                 return "list";
             }
             
-            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterState) {
                 Object *null = _gc->registerObject(new Object());
 
                 if (arguments.size()==0) {
@@ -564,7 +564,7 @@ namespace tinyclojure {
                 return 2;
             }
             
-            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterState) {
                 return _gc->registerObject(new Object(arguments[0], arguments[1]));
             }
         };
@@ -574,7 +574,7 @@ namespace tinyclojure {
                 return "print";
             }
             
-            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterState) {
                 for (int argumentIndex=0; argumentIndex<arguments.size(); ++argumentIndex) {
                     std::string thisArgument = arguments[argumentIndex]->stringRepresentation();
                     
@@ -599,7 +599,7 @@ namespace tinyclojure {
                 return false;
             }
             
-            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterState) {
                 Object  *symbol = arguments[0],
                         *value = _evaluator->scopedEval(interpreterState, arguments[1]);
                 
@@ -622,7 +622,7 @@ namespace tinyclojure {
                 return false;
             }
             
-            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterState) {
                 InterpreterScope aScope(interpreterState);
                 
                 Object  *retValue = _gc->registerObject(new Object());
@@ -681,9 +681,9 @@ namespace tinyclojure {
                 }
             }
             
-            void constructArgumentList(Object *arglist, std::vector<Object*>& argumentSymbols) {
+            void constructArgumentList(Object *arglist, ObjectList& argumentSymbols) {
                 // construct the argument list
-                std::vector<Object*> parameterSymbols;
+                ObjectList parameterSymbols;
                 bool validArgumentList = false;
                 if (arglist->buildList(parameterSymbols)) {
                     if (parameterSymbols.size()) {
@@ -725,7 +725,7 @@ namespace tinyclojure {
                 return 3;
             }
             
-            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterState) {
                 // symbol
                 Object  *symbol = arguments[0],
                         *arglist = arguments[1];
@@ -735,7 +735,7 @@ namespace tinyclojure {
                 }
                 
                 // construct an argument list
-                std::vector<Object*> argumentSymbols;
+                ObjectList argumentSymbols;
                 constructArgumentList(arglist, argumentSymbols);
                 
                 // remove the initial argument and symbol, just leaving the function body
@@ -743,7 +743,7 @@ namespace tinyclojure {
                 arguments.erase(arguments.begin());
                 
                 // capture the arguments
-                std::vector<Object*> capturedArguments;
+                ObjectList capturedArguments;
                 capturedArguments.push_back(_gc->registerObject(new Object("do", true)));
                 for (int argumentIndex = 0; argumentIndex < arguments.size(); ++argumentIndex) {
                     capturedArguments.push_back(captureState(arguments[argumentIndex], interpreterState));
@@ -766,16 +766,16 @@ namespace tinyclojure {
                 return 2;
             }
                         
-            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterState) {
                 // construct an argument list
-                std::vector<Object*> argumentSymbols;
+                ObjectList argumentSymbols;
                 constructArgumentList(arguments[0], argumentSymbols);
                 
                 // remove the initial argument, just leaving the function body
                 arguments.erase(arguments.begin());
 
                 // capture the arguments
-                std::vector<Object*> capturedArguments;
+                ObjectList capturedArguments;
                 capturedArguments.push_back(_gc->registerObject(new Object("do", true)));
                 for (int argumentIndex = 0; argumentIndex < arguments.size(); ++argumentIndex) {
                     capturedArguments.push_back(captureState(arguments[argumentIndex], interpreterState));
@@ -792,7 +792,7 @@ namespace tinyclojure {
             
             virtual Object* operation(Object *consObject) = 0;
             
-            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterState) {
                 if (arguments[0]->type() != Object::kObjectTypeCons) {
                     std::stringstream stringBuilder;
                     
@@ -836,7 +836,7 @@ namespace tinyclojure {
                 _typeArray.push_back(Object::kObjectTypeString);
             }
             
-            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterState) {
                 return _evaluator->parse(arguments[0]->stringValue());
             }
         };
@@ -850,7 +850,7 @@ namespace tinyclojure {
                 return 1;
             }
             
-            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterState) {
                 return _evaluator->scopedEval(interpreterState, arguments[0]);
             }
         };
@@ -864,9 +864,36 @@ namespace tinyclojure {
                 return 0;
             }
             
-            Object *execute(std::vector<Object*> arguments, InterpreterScope *interpreterState) {                
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterState) {                
                 return _gc->registerObject(new Object(_ioProxy->readLine()));
             }
+        };
+        
+        class Cond : public ExtensionFunction {
+            std::string functionName() {
+                return "cond";
+            }
+            
+            bool preEvaluateArguments() {
+                return false;
+            }
+            
+            Object* execute(ObjectList arguments, InterpreterScope* interpreterState) {
+                if (arguments.size() % 2 != 0) {
+                    throw Error("The cond form requires an even number of arguemnts");
+                }
+                
+                for (int firstArgumentIndex = 0; firstArgumentIndex < arguments.size(); firstArgumentIndex += 2) {
+                    Object  *firstArgument = arguments[firstArgumentIndex],
+                            *secondArgument = arguments[firstArgumentIndex+1]; // we known arguments has even length
+                    
+                    if (_evaluator->scopedEval(interpreterState, firstArgument)->coerceBoolean()) {
+                        return _evaluator->scopedEval(interpreterState, secondArgument);
+                    }
+                }
+                
+                return _gc->registerObject(new Object());
+            };
         };
     }
     
@@ -918,10 +945,10 @@ namespace tinyclojure {
         }
     }
     
-    Object::Object(Object *code, std::vector<Object*> arguments) {
+    Object::Object(Object *code, ObjectList arguments) {
         _type = kObjectTypeClosure;
         pointer.functionValue.objectPointer = code;
-        pointer.functionValue.argumentSymbols = new std::vector<Object*>(arguments);
+        pointer.functionValue.argumentSymbols = new ObjectList(arguments);
     }
     
     Object::Object(ExtensionFunction *function) {
@@ -1026,7 +1053,7 @@ namespace tinyclojure {
         return pointer.builtinFunctionValue.extensionFunctionPointer;
     }
     
-    std::vector<Object*>& Object::functionValueParameters() {
+    ObjectList& Object::functionValueParameters() {
         return *pointer.functionValue.argumentSymbols;
     }
     
@@ -1064,16 +1091,16 @@ namespace tinyclojure {
         pointer.consValue.right = right;
     }
     
-    Object::Object(std::vector<Object*> objects) {
+    Object::Object(ObjectList objects) {
         _type = kObjectTypeVector;
-        pointer.vectorPointer = new std::vector<Object*>(objects);
+        pointer.vectorPointer = new ObjectList(objects);
     }
     
     std::string& Object::stringValue() {
         return *pointer.stringValue;
     }
     
-    std::vector<Object*>& Object::vectorValue() {
+    ObjectList& Object::vectorValue() {
         return *pointer.vectorPointer;
     }
     
@@ -1150,7 +1177,7 @@ namespace tinyclojure {
                 break;
                 
             case kObjectTypeCons: {
-                std::vector<Object*> elements;
+                ObjectList elements;
                 
                 if (buildList(elements) && expandList) {
                     stringBuilder << "`(";
@@ -1202,7 +1229,7 @@ namespace tinyclojure {
         return false;
     }
     
-    bool Object::buildList(std::vector<Object*>& results) {
+    bool Object::buildList(ObjectList& results) {
         Object *currentObject = this;
         
         while (currentObject->_type == kObjectTypeCons) {
@@ -1226,7 +1253,7 @@ namespace tinyclojure {
 #pragma mark -
 #pragma mark TinyClojure
     
-    Object* TinyClojure::listObject(std::vector<Object*> list) {
+    Object* TinyClojure::listObject(ObjectList list) {
         if (list.size()) {
             if (list.size()==1) {
                 // end a list with a nil sentinel
@@ -1328,6 +1355,7 @@ namespace tinyclojure {
         internalAddExtensionFunction(new core::ReadString);
         internalAddExtensionFunction(new core::Eval);
         internalAddExtensionFunction(new core::ReadLine);
+        internalAddExtensionFunction(new core::Cond);
     }
     
 #pragma mark parser
@@ -1337,7 +1365,7 @@ namespace tinyclojure {
         return recursiveParse(parseState);
     }
     
-    void TinyClojure::parseAll(std::string codeText, std::vector<Object*>& expressions) {
+    void TinyClojure::parseAll(std::string codeText, ObjectList& expressions) {
         ParserState parseState(codeText);
         
         while (parseState.charactersLeft()) {
@@ -1451,7 +1479,7 @@ namespace tinyclojure {
              * * terms (recurse this function)
              * * Close parenthesis
              */
-            std::vector<Object*> elements;
+            ObjectList elements;
             
             // advance from the parenthesis
             ++parseState.position;
@@ -1514,7 +1542,7 @@ namespace tinyclojure {
              * * terms (recurse this function)
              * * Close parenthesis
              */
-            std::vector<Object*> elements;
+            ObjectList elements;
             
             // advance from the parenthesis
             ++parseState.position;
@@ -1556,7 +1584,7 @@ namespace tinyclojure {
              * * Close parenthesis
              */
             
-            std::vector<Object*> elements;
+            ObjectList elements;
             
             // advance beyond the parenthesis
             ++parseState.position;
@@ -1730,7 +1758,7 @@ namespace tinyclojure {
                 break;
                 
             case Object::kObjectTypeVector: {
-                std::vector<Object*> elements;
+                ObjectList elements;
                 
                 for (int elementIndex=0; elementIndex<code->vectorValue().size(); ++elementIndex) {
                     elements[elementIndex] = scopedEval(interpreterState, code->vectorValue()[elementIndex]);
@@ -1752,7 +1780,7 @@ namespace tinyclojure {
         
             case Object::kObjectTypeCons:
                 if (code->isList()) {
-                    std::vector<Object*> arguments;
+                    ObjectList arguments;
                     code->buildList(arguments);
                     
                     Object *identifierObject = scopedEval(interpreterState, arguments[0]);
@@ -1809,7 +1837,7 @@ namespace tinyclojure {
                             throw Error(stringBuilder.str());
                         }
                         
-                        std::vector<Object*> preparedArguments;
+                        ObjectList preparedArguments;
                         if (function->preEvaluateArguments()) {
                             for (int argumentIndex=0; argumentIndex<arguments.size(); ++argumentIndex) {
                                 preparedArguments.push_back(scopedEval(interpreterState, arguments[argumentIndex]));

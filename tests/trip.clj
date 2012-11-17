@@ -26,3 +26,18 @@
             (- x y))))
 (def foo (factory 12))
 (assertzero (foo 12) "4")
+
+(assertzero
+  (cond
+    (= 1 2)
+      (do
+        (print "this shouldn't happen")
+        1)
+    (= (+ 2 2) 0)
+      (do
+        (print "this shouldn't happen")
+        1)
+    (= 1 (- 2 1))
+      0)
+  "cond failure")
+  
