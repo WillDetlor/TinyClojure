@@ -36,21 +36,17 @@ Ostensibly Clojure, I would say ClojureScript, but when I last looked, ClojureSc
 
 ### TODO
 
-If you want to get involved, get in touch with me at slidetocode at gmail dot com.  Forks and pull requests are a good thing.  The current TODO list is
-
-Right now, the interpreter is "in progress", and it really just needs to get started, personal TODOs
+If you want to get involved, get in touch with me at slidetocode at gmail dot com.  Forks and pull requests are a good thing.  The interpreter is very young right now, and many of these TODOs are The current TODO list is
 
 ###### Immediate tasks
-* basic eval in clojure itself (needs read-string)
-* should ensure all Object properties are indeed immutable
-* sort the :else case in a (cond ) statement
+* Ensure all Object properties are indeed immutable
 
 ###### Forms to implement
 * let
 * map
 
-
 ###### Minor
+* sort :else case in a (cond ) statement
 * swap all return NULLs for return nil object
 * shouldn't need to reset the interpreter when an extension function is added
 * work on the command line interface
@@ -63,6 +59,7 @@ Right now, the interpreter is "in progress", and it really just needs to get sta
 * Garbage collector.  Right now there is no garbage collector to speak of.  Objects collect until the interpreter destructs, then they are deleted.
 * Parser rewrite.  I converted the parser from the tolerant parser used in Lisping.  It is neither elegant, nor an appropriate design.  I would like to replace it with something more elegant once this interpreter is up and running.
 * Implement all the Clojure.Core functions.
+* Better error reporting
 * A more efficient structure.  TinyClojure converts code into Clojure data, then recursively evalutes it.  This eats stack space and it is not efficient either in terms of speed or memory.  A bytecode version would increase the size of the source code somewhat, but it would greatly increase efficiency.
 
 
@@ -96,8 +93,9 @@ Less defined principles are
 Tiny Clojure is designed to be as hackable as possible, and all interfaces are documented with Doxygen to make this as accessible as possible.  However here are a few bullet points to help you before you dive into the source.
 
 * `Object` is the fundamental dynamic type in TinyClojure.  All code, data and functions (whether closure or builtins) are instances of this type.  The convention is that when creating any object, it must be registered with the garbage collector.
-* Parsing and Evaluation are handled by The `TinyClojure` object.  Pass a string to the parse function and it will return the parsed source code as a data structure.  To execute this code, call eval on that data.  Internally there is both a scoped and an unscoped eval function. Scoped eval is a wrapper around unscoped eval that creates a new scope before evaluating the code.  By default use this as it will 
-* Interpreter scope objects represent the current "scope", essentially these are 
+* Parsing and Evaluation are handled by The `TinyClojure` object.  Pass a string to the parse function and it will return the parsed source code as a data structure.  To execute this code, call eval on that data.  Internally there is both a scoped and an unscoped eval function. Scoped eval is a wrapper around unscoped eval that creates a new scope before evaluating the code.  By default use this as it will
+* Interpreter scope objects represent the current "scope", these are simply wrappers around a dictionary of defined names and values
+* subclasses of ExtensionFunction are responsible for all builtin forms, and they are the mechanism for extending the language.  To add a form, create a subclass of ExtensionFunction and register it with the TinyClojure object
 
 ### Contact
 
