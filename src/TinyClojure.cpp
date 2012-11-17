@@ -412,6 +412,34 @@ namespace tinyclojure {
                 return _gc->registerObject(new Object(true));
             }
         };
+
+        class NotEqual : public ExtensionFunction {
+            std::string functionName() {
+                return "not=";
+            }
+            
+            int minimumNumberOfArguments() {
+                return 1;
+            }
+            
+            bool preEvaluateArguments() {
+                return false;
+            }
+            
+            Object *execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
+                Object *lhs = _evaluator->scopedEval(interpreterState, arguments[0]);
+                
+                for (int argumentIndex = 1; argumentIndex < arguments.size(); ++argumentIndex) {
+                    Object *rhs = _evaluator->scopedEval(interpreterState, arguments[argumentIndex]);
+                    
+                    if (*lhs==*rhs) {
+                        return _gc->registerObject(new Object(false));
+                    }
+                }
+                
+                return _gc->registerObject(new Object(true));
+            }
+        };
         
         class NumericInequality : public ExtensionFunction {
             Object *execute(std::vector<Object*> arguments, InterpreterScope* interpreterState) {
@@ -1282,6 +1310,7 @@ namespace tinyclojure {
         internalAddExtensionFunction(new core::Divide());
         internalAddExtensionFunction(new core::If());
         internalAddExtensionFunction(new core::Equality());
+        internalAddExtensionFunction(new core::NotEqual());
         internalAddExtensionFunction(new core::Cons());
         internalAddExtensionFunction(new core::List());
         internalAddExtensionFunction(new core::LessThan);

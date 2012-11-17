@@ -64,8 +64,8 @@
 		18805583163300C400288E24 /* TinyClojure */ = {
 			isa = PBXGroup;
 			children = (
-				18F81BDE163DDAFB00F7CCB8 /* TinyClojure.h */,
 				18F81BDF163DDAFB00F7CCB8 /* tool.cpp */,
+				18F81BDE163DDAFB00F7CCB8 /* TinyClojure.h */,
 				18F81BDC163DDACC00F7CCB8 /* TinyClojure.cpp */,
 			);
 			path = TinyClojure;
