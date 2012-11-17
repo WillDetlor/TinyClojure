@@ -172,31 +172,31 @@ namespace tinyclojure {
         bool operator==(const Object& rhs);
         
         /// return a reference to this object as a string value
-        std::string& stringValue();
+        std::string stringValue();
         
         /// return a reference to this object as a vector
-        ObjectList& vectorValue();
+        ObjectList vectorValue();
         
         /// accessor for code part of function value
-        Object*& functionValueCode();
+        Object* functionValueCode();
         
         /// accessor for extension function part of function value
-        ExtensionFunction*& functionValueExtensionFunction();
+        ExtensionFunction* functionValueExtensionFunction();
         
         /// accessor for parameter list part of function value
-        ObjectList& functionValueParameters();
+        ObjectList functionValueParameters();
         
         /// accessor for car
-        Object*& consValueLeft();
+        Object* consValueLeft();
         
         /// accessor for cdr
-        Object*& consValueRight();
+        Object* consValueRight();
         
         /// return a reference to this object as an integer value
-        Number& numberValue();
+        Number numberValue();
         
         /// return a reference to this object as a boolean value
-        bool& booleanValue();
+        bool booleanValue();
         
         /// this coerces whatever we have into a boolean
         bool coerceBoolean();

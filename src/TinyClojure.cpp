@@ -1045,23 +1045,23 @@ namespace tinyclojure {
         return !operator==(rhs);
     }
     
-    Object*& Object::functionValueCode() {
+    Object* Object::functionValueCode() {
         return pointer.functionValue.objectPointer;
     }
 
-    ExtensionFunction*& Object::functionValueExtensionFunction() {
+    ExtensionFunction* Object::functionValueExtensionFunction() {
         return pointer.builtinFunctionValue.extensionFunctionPointer;
     }
     
-    ObjectList& Object::functionValueParameters() {
+    ObjectList Object::functionValueParameters() {
         return *pointer.functionValue.argumentSymbols;
     }
     
-    Object*& Object::consValueLeft() {
+    Object* Object::consValueLeft() {
         return pointer.consValue.left;
     }
     
-    Object*& Object::consValueRight() {
+    Object* Object::consValueRight() {
         return pointer.consValue.right;
     }
     
@@ -1096,19 +1096,19 @@ namespace tinyclojure {
         pointer.vectorPointer = new ObjectList(objects);
     }
     
-    std::string& Object::stringValue() {
+    std::string Object::stringValue() {
         return *pointer.stringValue;
     }
     
-    ObjectList& Object::vectorValue() {
+    ObjectList Object::vectorValue() {
         return *pointer.vectorPointer;
     }
     
-    Number& Object::numberValue() {
+    Number Object::numberValue() {
         return *pointer.numberPointer;
     }
     
-    bool& Object::booleanValue() {
+    bool Object::booleanValue() {
         return pointer.booleanValue;
     }
     

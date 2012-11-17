@@ -40,4 +40,5 @@
     (= 1 (- 2 1))
       0)
   "cond failure")
-  
+
+(print "trip.clj finished")

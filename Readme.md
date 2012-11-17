@@ -39,7 +39,7 @@ Ostensibly Clojure, I would say ClojureScript, but when I last looked, ClojureSc
 If you want to get involved, get in touch with me at slidetocode at gmail dot com.  Forks and pull requests are a good thing.  The interpreter is very young right now, and many of these TODOs are The current TODO list is
 
 ###### Immediate tasks
-* Ensure all Object properties are indeed immutable
+
 
 ###### Forms to implement
 * let
@@ -96,6 +96,7 @@ Tiny Clojure is designed to be as hackable as possible, and all interfaces are d
 * Parsing and Evaluation are handled by The `TinyClojure` object.  Pass a string to the parse function and it will return the parsed source code as a data structure.  To execute this code, call eval on that data.  Internally there is both a scoped and an unscoped eval function. Scoped eval is a wrapper around unscoped eval that creates a new scope before evaluating the code.  By default use this as it will
 * Interpreter scope objects represent the current "scope", these are simply wrappers around a dictionary of defined names and values
 * subclasses of ExtensionFunction are responsible for all builtin forms, and they are the mechanism for extending the language.  To add a form, create a subclass of ExtensionFunction and register it with the TinyClojure object
+* The number class is a type wrapping Clojure's "numeric tower"
 
 ### Contact
 
