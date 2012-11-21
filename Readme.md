@@ -2,13 +2,15 @@
 
 ### What is TinyClojure
 
-TinyClojure is a project to build a small, easily embeddable version of Clojure/ClojureScript. In many ways it is my attempt to create a Clojure equivalent of [TinyScheme](http://tinyscheme.sourceforge.net/home.html).
+TinyClojure is a project to build a small, easily embeddable version of Clojure/ClojureScript in portable C++. In many ways it is my attempt to create a Clojure equivalent of [TinyScheme](http://tinyscheme.sourceforge.net/home.html).
 
-I started this project because I was looking for an embeddable Clojure for [Lisping](http://slidetocode.com/), an iPad Lisp development environment I develop.  Having used [TinyScheme](http://tinyscheme.sourceforge.net/home.html) for the scheme interpreter in lisping I was looking for a clojure version that is just as easily embeddable, but for Clojure. [ClojureC](https://github.com/schani/clojurec) is good, but the build process is complex, and there are external library dependencies.  These are not insurmountable, but they were sufficient to discourage me from using it.
+I started this project because I was looking for an embeddable Clojure for [Lisping](http://slidetocode.com/), an iPad Lisp development environment I develop.  Having used the excellent [TinyScheme](http://tinyscheme.sourceforge.net/home.html) for the Scheme interpreter in Lisping I wanted looking for a clojure version that is just as easily embeddable. [ClojureC](https://github.com/schani/clojurec) is good, but the build process is complex, and there are external library dependencies.  These are not insurmountable, but they were sufficient to discourage me from using it.
 
-TinyClojure will never have ClojureC's performance because my focus is on making it the easiest way to embed Clojure within any application.  There are just two files to compile into your code, no external dependencies, and the extension and embedding interface is as simple as it is possible to be.  I don't want TinyClojure to bloat, but I am happy for it to end up considerably larger than the almost impossibly slim TinyScheme.
+The focus with TinyClojure's development is to make it the easiest way to embed Clojure within any application.  Tiny Clojure consists of one header file, one source file, no external dependencies, and the extension and embedding interface is as simple as it is possible to be.  All forms are subclasses of the ExtensionFunction class, whether they are builtin control statements like (if ), (cond ), (do ) or custom extension functions.  This structure keeps TinyClojure's core minimal, so development is easy and contained.
 
-A warning, these are very early days for TinyClojure, it is not feature complete, and it does not even carry a version number.  Feel free to use it for whatever you would to, but do not rely on it.
+A warning, these are very early days for TinyClojure, the core of the interpreter works well and I have implemented the most basic functions for TinyClojure to function as a language (simple io, simple arithmetic, the most basic control structures).  I am now working on filling out Clojure's Core API.  Feel free to use it for whatever you would to, but do not rely on it.
+
+Obviously, this is an open source project and if you want to get involved, fork it and get going.  You can get in touch with me at <slidetocode@gmail.com>.  The real priority for now is to fill out the standard library so that TinyClojure is usable as a language, then I would like to work on more complex issues such as threading.
 
 ### How do I embed TinyClojure in my code?
 
@@ -22,47 +24,52 @@ Easily.
 All objects are garbage collected by the interpreter itself, so there is no need to delete them.
 
 
-### Why?
-
-It seems to me that Greenspun's tenth rule is correct.  To paraphrase "all sufficiently complex software will eventually contain an implementation of LISP".  I believe that
-
-1. If you are going to have to embed anything, it should be easy.
-2. That LISP should be Clojure.
-
-
 ### Exactly what language are you targeting?
 
 Ostensibly Clojure, I would say ClojureScript, but when I last looked, ClojureScript lacked the (eval ) form, and for me, LISP without (eval ) is no LISP at all.  Right now, I'm looking to implement the Clojure language itself (without namespaces, imports or any of the Java interface), and its core library in [the Clojure.Core API](http://richhickey.github.com/clojure/clojure.core-api.html).
 
 ### TODO
 
-If you want to get involved, get in touch with me at slidetocode at gmail dot com.  Forks and pull requests are a good thing.  The interpreter is very young right now, and many of these TODOs are The current TODO list is
+This project is very young, with a very vague and incomplete TODO list.
 
 ###### Immediate tasks
-* vectors
-* nth
+
+* implement an iterable interface, and make forms such as (nth ) work on both vectors and lists
 
 ###### Forms to implement
+
 * let
+* recurse structures
 * map
+* many more, import and prioritise the Clojure.core AOI
 
 ###### Minor
+
+* fix the bugs with lists in stringRepresentation()
 * sort :else case in a (cond ) statement
 * swap all return NULLs for return nil object
 * shouldn't need to reset the interpreter when an extension function is added
 * work on the command line interface
+* correct the (print ) form to 
+* parse \n, \r, \t, etc. correctly in strings
+* parse comments
+* variable length argument lists to fn (the &)
 
 ###### Major
-* variable length argument lists to fn (the &)
+
+* implement all datastructures (the various hashmaps, etc.)
 * full numeric stack.  Only cater for integers and floats right now, need fractions
-* Test suite.  This is sadly lacking right now.
+* Test suite.  This is sadly lacking right now.  test.clj is the beginnings of my testing
 * refactoring.  C++ is not my "first language" in the programming world, so any refactors to make it more idiomatic would be appreciated.
 * Garbage collector.  Right now there is no garbage collector to speak of.  Objects collect until the interpreter destructs, then they are deleted.
 * Parser rewrite.  I converted the parser from the tolerant parser used in Lisping.  It is neither elegant, nor an appropriate design.  I would like to replace it with something more elegant once this interpreter is up and running.
 * Implement all the Clojure.Core functions.
 * Better error reporting
-* A more efficient structure.  TinyClojure converts code into Clojure data, then recursively evalutes it.  This eats stack space and it is not efficient either in terms of speed or memory.  A bytecode version would increase the size of the source code somewhat, but it would greatly increase efficiency.
+* Macros
 
+###### Oneday
+
+* A more efficient structure.  TinyClojure converts code into Clojure data, then recursively evalutes it.  This eats stack space and it is not efficient either in terms of speed or memory.  A bytecode structure would increase the size of the source code somewhat, but it would greatly increase efficiency.
 
 ### Coding conventions
 
@@ -106,4 +113,4 @@ If you want to contact me, email me at slidetocode at gmail dot com
 
 ### License
 
-Tiny clojure is licensed under the standard MIT license so that it can be used anywhere, for anything.  Nevertheless, pull requests would be greatly appreciated
+Tiny clojure is licensed under the standard MIT license so that it can be used anywhere, for anything, as long as you keep the copyright notice.  Nevertheless, pull requests would be greatly appreciated if you improve TinyClojure.

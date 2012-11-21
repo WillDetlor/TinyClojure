@@ -1,5 +1,5 @@
 ; basic "trip tests" for TinyClojure
-; ideally everything should evaluate to 0 unless otherwise noted
+; tests are designed to evaluate to 0
 
 ; an assert statement
 (defn assertzero [value label]

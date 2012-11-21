@@ -244,6 +244,18 @@ namespace tinyclojure {
     
 #pragma mark - ExtensionFunction
     
+    void ExtensionFunction::garbageCollector(GarbageCollector *gc) {
+        _gc = gc;
+    }
+    void ExtensionFunction::evaluator(TinyClojure *evaluator) {
+        _evaluator = evaluator;
+    }
+    
+    
+    void ExtensionFunction::setIOProxy(IOProxy *ioProxy) {
+        _ioProxy = ioProxy;
+    }
+    
     bool ExtensionFunction::validateArgumentTypes(std::vector<Object::ObjectType>& typeArray) {
         if (_typeArray.size()==0)
             return true;
@@ -1320,8 +1332,8 @@ namespace tinyclojure {
     }
     
     void TinyClojure::internalAddExtensionFunction(ExtensionFunction *function) {
-        function->setEvaluator(this);
-        function->setGarbageCollector(_gc);
+        function->evaluator(this);
+        function->garbageCollector(_gc);
         function->setIOProxy(_ioProxy);
         function->setup();
         
@@ -1934,6 +1946,26 @@ namespace tinyclojure {
 
 #pragma mark -
 #pragma mark ParserState
+    
+    ParserState::ParserState(std::string& stringin) : parserString(stringin) {
+        position = 0;
+    }
+    
+    bool ParserState::charactersLeft() {
+        return position < parserString.length();
+    }
+    
+    int ParserState::skipNewLinesAndWhitespace() {
+        return skipCharactersInString(" \n\r\t");
+    }
+    
+    int ParserState::skipSeparators() {
+        return skipCharactersInString(" \t,\n\r");
+    }
+    
+    char ParserState::currentChar() {
+        return parserString[position];
+    }
 
     int ParserState::skipCharactersInString(std::string skipSet) {
         int numberOfSkippedCharacters = 0;
@@ -1975,5 +2007,21 @@ namespace tinyclojure {
         }
         
         return 0;
+    }
+#pragma mark -
+#pragma mark IOProxy
+    
+    void IOProxy::writeOut(std::string stringout) {
+        std::cout << stringout;
+    }
+    
+    void IOProxy::writeErr(std::string stringout) {
+        std::cerr << stringout;
+    }
+    
+    std::string IOProxy::readLine() {
+        std::string input;
+        std::getline(std::cin, input, '\n');
+        return input;
     }
 }

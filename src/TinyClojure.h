@@ -84,23 +84,19 @@ namespace tinyclojure {
     /**
      * A class/interface for the interpreters IO
      *
-     * Subclassing this allows for easier
+     * Subclassing this allows you to fully customise the IO
      */
     class IOProxy {
     public:
-        void writeOut(std::string stringout) {
-            std::cout << stringout;
-        }
+        /// write a string to the stdout
+        void writeOut(std::string stringout);
         
-        void writeErr(std::string stringout) {
-            std::cerr << stringout;
-        }
+        /// write a string to the stderr
+        void writeErr(std::string stringout);
         
-        std::string readLine() {
-            std::string input;
-            std::getline(std::cin, input, '\n');
-            return input;
-        }
+        /// read a line from the stdin
+        std::string readLine();
+        
     protected:
         
     };
@@ -287,9 +283,7 @@ namespace tinyclojure {
      */
     class ParserState {
     public:
-        ParserState(std::string& stringin) : parserString(stringin) {
-            position = 0;
-        }
+        ParserState(std::string& stringin);
         
         std::string& parserString;
         int position;
@@ -297,23 +291,17 @@ namespace tinyclojure {
         /**
          * skip newlines and whitespace.  A convenience wrapper for skipCharactersInString
          */
-        int skipNewLinesAndWhitespace() {
-            return skipCharactersInString(" \n\r\t");
-        }
+        int skipNewLinesAndWhitespace();
         
         /**
          * a clojure separator set
          */
-        int skipSeparators() {
-            return skipCharactersInString(" \t,\n\r");
-        }
+        int skipSeparators();
         
         /**
          * the character currently pointed to by the parser state
          */
-        char currentChar() {
-            return parserString[position];
-        }
+        char currentChar();
         
         /**
          * Safely peek ahead one character, returning 0 if this would run off the end of the string
@@ -328,9 +316,7 @@ namespace tinyclojure {
         /**
          * return true when the state position is within the bounds of the string
          */
-        bool charactersLeft() {
-            return position < parserString.length();
-        }
+        bool charactersLeft();
         
         /**
          * advance the parser through any characters in the passed string
@@ -390,7 +376,7 @@ namespace tinyclojure {
     /**
      * a wrapper for Object* when exporting any object
      *
-     * this helps the garbage collector keep track of root objects still exist
+     * this will allow the garbage collector keep track of root objects still in existence
      * DO NOT USE (read TODOs)
      *
      * TODO all objects exported from the TinyClojure should be exported via this
@@ -434,17 +420,10 @@ namespace tinyclojure {
             return NULL;
         }
         
-        void setGarbageCollector(GarbageCollector *gc) {
-            _gc = gc;
-        }
         
-        void setEvaluator(TinyClojure *evaluator) {
-            _evaluator = evaluator;
-        }
-        
-        void setIOProxy(IOProxy *ioProxy) {
-            _ioProxy = ioProxy;
-        }
+        void garbageCollector(GarbageCollector *gc);
+        void setIOProxy(IOProxy *ioProxy);
+        void evaluator(TinyClojure *evaluator);
         
         /**
          * validate the argument types
@@ -483,7 +462,11 @@ namespace tinyclojure {
             return requiredNumberOfArguments();
         }
         
-        /// evaluate arguments before passing them to the Extension Function
+        /**
+         * return true to evaluate arguments before passing them to the Extension Function, or false to leave arguments in their raw form
+         *
+         * override this to stop arguments that could potentially have side effects being evaluated (e.g. the cases in an if statement)
+         */
         virtual bool preEvaluateArguments() {
             return true;
         }
