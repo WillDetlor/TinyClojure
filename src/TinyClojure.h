@@ -210,6 +210,9 @@ namespace tinyclojure {
         /// build a string representation of the object
         std::string stringRepresentation(bool expandList=true);
         
+        /// is this object iterable
+        bool isIterable();
+        
     protected:
         ObjectType _type;
         union {

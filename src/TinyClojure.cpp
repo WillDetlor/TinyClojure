@@ -1209,6 +1209,18 @@ namespace tinyclojure {
         
         return stringBuilder.str();
     }
+    
+    bool Object::isIterable() {
+        if (_type == kObjectTypeVector) {
+            return false;
+        }
+        
+        if (isList()) {
+            return true;
+        }
+                
+        return false;
+    }
 
     bool Object::isList() {
         Object *currentObject = this;

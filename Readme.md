@@ -39,7 +39,8 @@ Ostensibly Clojure, I would say ClojureScript, but when I last looked, ClojureSc
 If you want to get involved, get in touch with me at slidetocode at gmail dot com.  Forks and pull requests are a good thing.  The interpreter is very young right now, and many of these TODOs are The current TODO list is
 
 ###### Immediate tasks
-
+* vectors
+* nth
 
 ###### Forms to implement
 * let
