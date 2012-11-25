@@ -46,13 +46,15 @@ void repl() {
         try {
             tinyclojure::Object *code = interpreter.parse(input);
             if (code) {
-                tinyclojure::Object *result = interpreter.eval(code);
-                std::cout << result->stringRepresentation() << std::endl;
+                if (code->type() != tinyclojure::Object::kObjectTypeNil) {
+                    tinyclojure::Object *result = interpreter.eval(code);
+                    std::cout << result->stringRepresentation() << std::endl;
+                }
             }
         } catch (tinyclojure::Error error) {
             std::cout << error.position << ": " << error.message << std::endl << std::endl;
         }
-    } while (input.length());
+    } while (!std::cin.eof());
 }
 
 int main(int argc, const char * argv[]) {
