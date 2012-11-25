@@ -970,6 +970,56 @@ namespace tinyclojure {
                 return retValue;
             }
         };
+        
+        class Nth : public ExtensionFunction {
+            std::string functionName() {
+                return "nth";
+            }
+            
+            int minimumNumberOfArguments() {
+                return 2;
+            }
+            
+            int maximumNumberOfArguments() {
+                return 3;
+            }
+            
+            Object* execute(ObjectList arguments, InterpreterScope *interpreterState) {
+                Object  *collection = arguments[0],
+                        *indexValue = arguments[1],
+                        *defaultValue = NULL;
+                
+                if (arguments.size()==3) {
+                    defaultValue = arguments[2];
+                }
+                
+                if (indexValue->type()!=Object::kObjectTypeNumber) {
+                    throw Error("second argument to nth must be an index");
+                }
+                
+                const int index = indexValue->numberValue().integerValue();
+                
+                ObjectList convertedList;
+                if (!collection->buildList(convertedList)) {
+                    throw Error("first argument to nth must be a collection");
+                }
+                
+                if (index < convertedList.size()) {
+                    if (index >= 0) {
+                        return convertedList[index];
+                    } else {
+                        throw Error("index to nth is < 0");
+                    }
+                } else {
+                    // out of bounds.  this is an exception if no default value is supplied
+                    if (defaultValue) {
+                        return defaultValue;
+                    } else {
+                        throw Error("index to nth is out of bounds");
+                    }
+                }
+            }
+        };
     }
     
 #pragma mark -
@@ -1317,20 +1367,28 @@ namespace tinyclojure {
     }
     
     bool Object::buildList(ObjectList& results) {
-        Object *currentObject = this;
-        
-        while (currentObject->_type == kObjectTypeCons) {
-            if (currentObject->pointer.consValue.right->_type == kObjectTypeCons) {
-                // this is a cons with a cons as its right value, continue the list
-                results.push_back(currentObject->pointer.consValue.left);
-                currentObject = currentObject->pointer.consValue.right;
-            } else if (currentObject->pointer.consValue.right->_type == kObjectTypeNil) {
-                // a nil terminator for the list
-                results.push_back(currentObject->pointer.consValue.left);
-                return true;
-            } else {
-                // this isn't a list
-                return false;
+        if (_type == kObjectTypeVector) {
+            results = *pointer.vectorPointer;
+            
+            return true;
+        } else {
+            Object *currentObject = this;
+
+            results.clear();
+            
+            while (currentObject->_type == kObjectTypeCons) {
+                if (currentObject->pointer.consValue.right->_type == kObjectTypeCons) {
+                    // this is a cons with a cons as its right value, continue the list
+                    results.push_back(currentObject->pointer.consValue.left);
+                    currentObject = currentObject->pointer.consValue.right;
+                } else if (currentObject->pointer.consValue.right->_type == kObjectTypeNil) {
+                    // a nil terminator for the list
+                    results.push_back(currentObject->pointer.consValue.left);
+                    return true;
+                } else {
+                    // this isn't a list
+                    return false;
+                }
             }
         }
         
@@ -1444,6 +1502,7 @@ namespace tinyclojure {
         internalAddExtensionFunction(new core::ReadLine);
         internalAddExtensionFunction(new core::Cond);
         internalAddExtensionFunction(new core::Let);
+        internalAddExtensionFunction(new core::Nth);
     }
     
 #pragma mark parser

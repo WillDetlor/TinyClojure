@@ -13,7 +13,7 @@
     (def a 10)
     (assertzero (- a 10) "2"))
 
-; make sure state is being captured
+; make sure state is being captured - TODO this behaviour fails with real clojure right now, fix it
 (def con 12)
 (def foo (fn [x] (- x con)))
 (def con 13)
@@ -46,5 +46,16 @@
 (assertzero
   (let [x 1 y (- x 1)] 12 y)
   "let failure")
+
+; nth statement
+(assertzero
+  (nth [1 2 0 4] 2)
+  "nth vector failure")
+(assertzero
+  (nth (list 1 2 0 4) 2)
+  "nth list failure")
+(assertzero
+  (nth [1 2 3 4] 10 0)
+  "nth vector failure")
 
 (print "trip.clj finished")

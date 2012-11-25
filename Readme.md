@@ -38,7 +38,6 @@ This project is very young, with a very vague and incomplete TODO list.
 
 ###### Forms to implement
 
-* let
 * recurse structures
 * map
 * many more, import and prioritise the Clojure.core AOI
