@@ -34,7 +34,6 @@ This project is very young, with a very vague and incomplete TODO list.
 
 ###### Immediate tasks
 
-* implement an iterable interface, and make forms such as (nth ) work on both vectors and lists
 
 ###### Forms to implement
 

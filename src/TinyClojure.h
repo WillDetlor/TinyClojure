@@ -233,7 +233,7 @@ namespace tinyclojure {
             Number *numberPointer;
             
             bool booleanValue;
-        } pointer;
+        } _contents;
     };
     
     /**

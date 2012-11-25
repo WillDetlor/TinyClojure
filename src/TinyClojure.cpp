@@ -1063,42 +1063,42 @@ namespace tinyclojure {
     Object::Object(std::string stringVal, bool symbol) {
         if (symbol) {
             _type = kObjectTypeSymbol;
-            pointer.stringValue = new std::string(stringVal);            
+            _contents.stringValue = new std::string(stringVal);            
         } else {
             _type = kObjectTypeString;
-            pointer.stringValue = new std::string(stringVal);
+            _contents.stringValue = new std::string(stringVal);
         }
     }
     
     Object::Object(Object *code, ObjectList arguments) {
         _type = kObjectTypeClosure;
-        pointer.functionValue.objectPointer = code;
-        pointer.functionValue.argumentSymbols = new ObjectList(arguments);
+        _contents.functionValue.objectPointer = code;
+        _contents.functionValue.argumentSymbols = new ObjectList(arguments);
     }
     
     Object::Object(ExtensionFunction *function) {
         _type = kObjectTypeBuiltinFunction;
-        pointer.builtinFunctionValue.extensionFunctionPointer = function;
+        _contents.builtinFunctionValue.extensionFunctionPointer = function;
     }
     
     Object::~Object() {
         switch (_type) {
             case kObjectTypeSymbol:
             case kObjectTypeString:
-                delete pointer.stringValue;
+                delete _contents.stringValue;
                 break;
                                 
             case kObjectTypeVector:
-                delete pointer.vectorPointer;
+                delete _contents.vectorPointer;
                 break;
             
             case kObjectTypeClosure:
                 // leave the Objects to the gc
-                delete pointer.functionValue.argumentSymbols;
+                delete _contents.functionValue.argumentSymbols;
                 break;
 
             case kObjectTypeNumber:
-                delete pointer.numberPointer;
+                delete _contents.numberPointer;
                 break;
                 
             case kObjectTypeCons:
@@ -1118,11 +1118,11 @@ namespace tinyclojure {
         
         switch (_type) {
             case kObjectTypeBoolean:
-                return pointer.booleanValue == rhs.pointer.booleanValue;
+                return _contents.booleanValue == rhs._contents.booleanValue;
                 break;
                 
             case kObjectTypeNumber:
-                return *pointer.numberPointer == *rhs.pointer.numberPointer;
+                return *_contents.numberPointer == *rhs._contents.numberPointer;
                 break;
                 
             case kObjectTypeNil:
@@ -1130,9 +1130,9 @@ namespace tinyclojure {
                 break;
                 
             case kObjectTypeVector:
-                if (pointer.vectorPointer->size() == rhs.pointer.vectorPointer->size()) {
-                    for (int elementIndex=0; elementIndex < pointer.vectorPointer->size(); ++elementIndex) {
-                        if (*(pointer.vectorPointer->at(elementIndex)) != *(rhs.pointer.vectorPointer->at(elementIndex))) {
+                if (_contents.vectorPointer->size() == rhs._contents.vectorPointer->size()) {
+                    for (int elementIndex=0; elementIndex < _contents.vectorPointer->size(); ++elementIndex) {
+                        if (*(_contents.vectorPointer->at(elementIndex)) != *(rhs._contents.vectorPointer->at(elementIndex))) {
                             return false;
                         }
                         
@@ -1144,24 +1144,24 @@ namespace tinyclojure {
                 break;
                 
             case kObjectTypeBuiltinFunction:
-                return pointer.builtinFunctionValue.extensionFunctionPointer->functionName() == rhs.pointer.builtinFunctionValue.extensionFunctionPointer->functionName();
+                return _contents.builtinFunctionValue.extensionFunctionPointer->functionName() == rhs._contents.builtinFunctionValue.extensionFunctionPointer->functionName();
                 break;
                 
             case kObjectTypeClosure:
-                return *pointer.functionValue.objectPointer == *rhs.pointer.functionValue.objectPointer;
+                return *_contents.functionValue.objectPointer == *rhs._contents.functionValue.objectPointer;
                 break;
  
             case kObjectTypeSymbol:
             case kObjectTypeString:
-                return *pointer.stringValue == *rhs.pointer.stringValue;
+                return *_contents.stringValue == *rhs._contents.stringValue;
                 break;
             
             case kObjectTypeCons:
                 // recursively evaluate ==, NB lhs equality should return more quickly than rhs equality
-                if (*pointer.consValue.left != *rhs.pointer.consValue.left) {
+                if (*_contents.consValue.left != *rhs._contents.consValue.left) {
                     return false;
                 }
-                return *pointer.consValue.right == *rhs.pointer.consValue.right;
+                return *_contents.consValue.right == *rhs._contents.consValue.right;
                 break;
         }
     }
@@ -1171,70 +1171,70 @@ namespace tinyclojure {
     }
     
     Object* Object::functionValueCode() {
-        return pointer.functionValue.objectPointer;
+        return _contents.functionValue.objectPointer;
     }
 
     ExtensionFunction* Object::functionValueExtensionFunction() {
-        return pointer.builtinFunctionValue.extensionFunctionPointer;
+        return _contents.builtinFunctionValue.extensionFunctionPointer;
     }
     
     ObjectList Object::functionValueParameters() {
-        return *pointer.functionValue.argumentSymbols;
+        return *_contents.functionValue.argumentSymbols;
     }
     
     Object* Object::consValueLeft() {
-        return pointer.consValue.left;
+        return _contents.consValue.left;
     }
     
     Object* Object::consValueRight() {
-        return pointer.consValue.right;
+        return _contents.consValue.right;
     }
     
     Object::Object(Number numberValue) {
         _type = kObjectTypeNumber;
-        pointer.numberPointer = new Number(numberValue);
+        _contents.numberPointer = new Number(numberValue);
     }
     
     Object::Object(bool boolValue) {
         _type = kObjectTypeBoolean;
-        pointer.booleanValue = boolValue;
+        _contents.booleanValue = boolValue;
     }
     
     Object::Object(int val) {
         _type = kObjectTypeNumber;
-        pointer.numberPointer = new Number(val);
+        _contents.numberPointer = new Number(val);
     }
 
     Object::Object(double val) {
         _type = kObjectTypeNumber;
-        pointer.numberPointer = new Number(val);
+        _contents.numberPointer = new Number(val);
     }
     
     Object::Object(Object *left, Object *right) {
         _type = kObjectTypeCons;
-        pointer.consValue.left = left;
-        pointer.consValue.right = right;
+        _contents.consValue.left = left;
+        _contents.consValue.right = right;
     }
     
     Object::Object(ObjectList objects) {
         _type = kObjectTypeVector;
-        pointer.vectorPointer = new ObjectList(objects);
+        _contents.vectorPointer = new ObjectList(objects);
     }
     
     std::string Object::stringValue() {
-        return *pointer.stringValue;
+        return *_contents.stringValue;
     }
     
     ObjectList Object::vectorValue() {
-        return *pointer.vectorPointer;
+        return *_contents.vectorPointer;
     }
     
     Number Object::numberValue() {
-        return *pointer.numberPointer;
+        return *_contents.numberPointer;
     }
     
     bool Object::booleanValue() {
-        return pointer.booleanValue;
+        return _contents.booleanValue;
     }
     
     bool Object::coerceBoolean() {
@@ -1264,22 +1264,22 @@ namespace tinyclojure {
         switch (_type) {
             case kObjectTypeBuiltinFunction:
                 stringBuilder   << "<<<builtin "
-                                << pointer.builtinFunctionValue.extensionFunctionPointer->functionName()
+                                << _contents.builtinFunctionValue.extensionFunctionPointer->functionName()
                                 << ">>>";
                 break;
                 
             case kObjectTypeClosure:
                 stringBuilder   << "<<<fn "
-                                << pointer.functionValue.objectPointer->stringRepresentation()
+                                << _contents.functionValue.objectPointer->stringRepresentation()
                                 << ">>>";
                 break;
                 
             case kObjectTypeString:
-                stringBuilder << '"' << *pointer.stringValue << '"';
+                stringBuilder << '"' << *_contents.stringValue << '"';
                 break;
                 
             case kObjectTypeNumber:
-                stringBuilder << pointer.numberPointer->stringRepresentation();
+                stringBuilder << _contents.numberPointer->stringRepresentation();
                 break;
                 
             case kObjectTypeVector:
@@ -1288,13 +1288,13 @@ namespace tinyclojure {
                     if (elementIndex) {
                         stringBuilder << " ";
                     }
-                    stringBuilder << pointer.vectorPointer->at(elementIndex)->stringRepresentation();
+                    stringBuilder << _contents.vectorPointer->at(elementIndex)->stringRepresentation();
                 }
                 stringBuilder << "]";
                 break;
                 
             case kObjectTypeBoolean:
-                if (pointer.booleanValue) {
+                if (_contents.booleanValue) {
                     stringBuilder << "true";
                 } else {
                     stringBuilder << "false";
@@ -1316,9 +1316,9 @@ namespace tinyclojure {
                     stringBuilder << ")";
                 } else {
                     stringBuilder   << "(cons "
-                                    << pointer.consValue.left->stringRepresentation()
+                                    << _contents.consValue.left->stringRepresentation()
                                     << " "
-                                    << pointer.consValue.right->stringRepresentation()
+                                    << _contents.consValue.right->stringRepresentation()
                                     << ")";
                 }
                 } break;
@@ -1328,7 +1328,7 @@ namespace tinyclojure {
                 break;
                 
             case kObjectTypeSymbol:
-                stringBuilder << *pointer.stringValue;
+                stringBuilder << *_contents.stringValue;
                 break;
         }
         
@@ -1351,10 +1351,10 @@ namespace tinyclojure {
         Object *currentObject = this;
         
         while (currentObject->_type == kObjectTypeCons) {
-            if (currentObject->pointer.consValue.right->_type == kObjectTypeCons) {
+            if (currentObject->_contents.consValue.right->_type == kObjectTypeCons) {
                 // this is a cons with a cons as its right value, continue the list
-                currentObject = currentObject->pointer.consValue.right;
-            } else if (currentObject->pointer.consValue.right->_type == kObjectTypeNil) {
+                currentObject = currentObject->_contents.consValue.right;
+            } else if (currentObject->_contents.consValue.right->_type == kObjectTypeNil) {
                 // a nil terminator for the list
                 return true;
             } else {
@@ -1368,7 +1368,7 @@ namespace tinyclojure {
     
     bool Object::buildList(ObjectList& results) {
         if (_type == kObjectTypeVector) {
-            results = *pointer.vectorPointer;
+            results = *_contents.vectorPointer;
             
             return true;
         } else {
@@ -1377,13 +1377,13 @@ namespace tinyclojure {
             results.clear();
             
             while (currentObject->_type == kObjectTypeCons) {
-                if (currentObject->pointer.consValue.right->_type == kObjectTypeCons) {
+                if (currentObject->_contents.consValue.right->_type == kObjectTypeCons) {
                     // this is a cons with a cons as its right value, continue the list
-                    results.push_back(currentObject->pointer.consValue.left);
-                    currentObject = currentObject->pointer.consValue.right;
-                } else if (currentObject->pointer.consValue.right->_type == kObjectTypeNil) {
+                    results.push_back(currentObject->_contents.consValue.left);
+                    currentObject = currentObject->_contents.consValue.right;
+                } else if (currentObject->_contents.consValue.right->_type == kObjectTypeNil) {
                     // a nil terminator for the list
-                    results.push_back(currentObject->pointer.consValue.left);
+                    results.push_back(currentObject->_contents.consValue.left);
                     return true;
                 } else {
                     // this isn't a list
