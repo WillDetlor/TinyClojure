@@ -1842,9 +1842,13 @@ namespace tinyclojure {
                             return _gc->registerObject(new Object());
                         }
                         
-                        // TODO test for number properly (ie decimals)
+                        int numberBaseIndex = 0;
+                        if (identifier[numberBaseIndex] == '-') {
+                            numberBaseIndex = 1;
+                        }
+                        
                         bool isInteger = true;
-                        for (int identifierIndex = 0; identifierIndex < identifier.size(); ++identifierIndex) {
+                        for (int identifierIndex = numberBaseIndex; identifierIndex < identifier.size(); ++identifierIndex) {
                             if (_numberSet.find(identifier[identifierIndex]) == _numberSet.npos) {
                                 isInteger = false;
                                 break;
@@ -1853,7 +1857,7 @@ namespace tinyclojure {
                         
                         bool    isFloat = true,
                                 pointFound = false;
-                        for (int identifierIndex = 0; identifierIndex < identifier.size(); ++identifierIndex) {
+                        for (int identifierIndex = numberBaseIndex; identifierIndex < identifier.size(); ++identifierIndex) {
                             if (identifier[identifierIndex]=='.') {
                                 if (pointFound) {
                                     isFloat = false;

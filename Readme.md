@@ -34,6 +34,8 @@ This project is very young, with a very vague and incomplete TODO list.
 
 ###### Immediate tasks
 
+* fix repl, so that blank input doesn't exit, but CTRL-D does
+*
 
 ###### Forms to implement
 
