@@ -27,6 +27,7 @@
 (def foo (factory 12))
 (assertzero (foo 12) "4")
 
+; test cond
 (assertzero
   (cond
     (= 1 2)
@@ -40,5 +41,10 @@
     (= 1 (- 2 1))
       0)
   "cond failure")
+  
+; test let statement
+(assertzero
+  (let [x 1 y (- x 1)] 12 y)
+  "let failure")
 
 (print "trip.clj finished")

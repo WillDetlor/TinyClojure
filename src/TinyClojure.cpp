@@ -907,6 +907,69 @@ namespace tinyclojure {
                 return _gc->registerObject(new Object());
             };
         };
+        
+        class Let : public ExtensionFunction {
+            std::string functionName() {
+                return "let";
+            }
+            
+            bool preEvaluateArguments() {
+                return false;
+            }
+            
+            int minimumNumberOfArguments() {
+                return 1;
+            }
+            
+            Object* execute(ObjectList arguments, InterpreterScope *interpreterState) {
+                InterpreterScope letScope(interpreterState);
+                
+                ObjectList bindings;
+                
+                // initial checks
+                if (!arguments[0]->buildList(bindings)) {
+                    throw Error("First argument to let statement must be a vector of bindings");
+                }
+                
+                if (bindings[0]->type() != Object::kObjectTypeSymbol) {
+                    throw Error("First argument to let statement must be a vector of bindings");
+                }
+                
+                if (bindings[0]->stringValue() != std::string("vector")) {
+                    throw Error("First argument to let statement must be a vector of bindings");
+                }
+                
+                if (!bindings.size()) {
+                    throw Error("First argument to let statement must be a vector of bindings");
+                }
+                
+                if (bindings.size() % 2 != 1) {
+                    throw Error("First argument of let statement must consist of variables and values");
+                }
+                
+                // set bindings
+                for (int bindingIndex = 1; bindingIndex < bindings.size(); bindingIndex += 2) {
+                    Object  *bindingSymbol = bindings[bindingIndex],
+                            *bindingValue = bindings[bindingIndex+1],
+                            *evaluatedBindingValue = _evaluator->scopedEval(&letScope, bindingValue);
+                    
+                    if (bindingSymbol->type() != Object::kObjectTypeSymbol) {
+                        throw Error("Let bindings should consist of symbol/value pairs");
+                    }
+                    
+                    letScope.setSymbolInScope(bindingSymbol->stringValue(), evaluatedBindingValue);
+                }
+                
+                // now evaluate the arguments in turn
+                Object  *retValue = _gc->registerObject(new Object());
+                
+                for (int argumentIndex = 1; argumentIndex < arguments.size(); ++argumentIndex) {
+                    retValue = _evaluator->unscopedEval(&letScope, arguments[argumentIndex]);
+                }
+                
+                return retValue;
+            }
+        };
     }
     
 #pragma mark -
@@ -1380,6 +1443,7 @@ namespace tinyclojure {
         internalAddExtensionFunction(new core::Eval);
         internalAddExtensionFunction(new core::ReadLine);
         internalAddExtensionFunction(new core::Cond);
+        internalAddExtensionFunction(new core::Let);
     }
     
 #pragma mark parser
