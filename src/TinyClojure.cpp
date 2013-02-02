@@ -1585,29 +1585,45 @@ namespace tinyclojure {
             
             while (parseState.charactersLeft()) {
                 const char currentChar = parseState.currentChar();
-                
-                /// TODO check for escapes
-                stringbuf.append(&currentChar, 1);
                 ++parseState.position;
-                
+
                 if (escapeNextChar) {
+                    char adjustedChar = currentChar;
+                    
+                    switch (currentChar) {
+                        case 'n':
+                            adjustedChar = 10;
+                            break;
+                            
+                        case 'r':
+                            adjustedChar = 13;
+                            break;
+                            
+                        case 't':
+                            adjustedChar = 9;
+                            break;
+                    }
+                    
+                    stringbuf.append(&adjustedChar, 1);
+//#error check the string "hello \" how"
+
                     escapeNextChar = false;
                 } else {
                     if (currentChar == '\\') {
                         escapeNextChar = true;
-                    } else if (currentChar=='"' && stringbuf.length()>1) {
-                        // TODO do something in the case of regexes
-                        if (stringType == stringTypeRegex) {
-                            std::cerr << "Not dealing with regexes" << std::endl;
+                    } else {
+                        if (currentChar=='"' && stringbuf.length()>1) {
+                            // TODO do something in the case of regexes
+                            if (stringType == stringTypeRegex) {
+                                std::cerr << "Not dealing with regexes" << std::endl;
+                            }
+                                                        
+                            // end of the string
+                            Object *element = new Object(stringbuf);
+                            _gc->registerObject(element);
+                            return element;
                         }
-                        
-                        // remove the " that has been collected from the end of the string
-                        stringbuf = stringbuf.substr(0, stringbuf.length()-1);
-                        
-                        // end of the string
-                        Object *element = new Object(stringbuf);
-                        _gc->registerObject(element);
-                        return element;
+                        stringbuf.append(&currentChar, 1);
                     }
                 }
             }

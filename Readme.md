@@ -50,7 +50,6 @@ This project is very young, with a very vague and incomplete TODO list.
 * work on the command line interface
 * correct the (print ) form to 
 * parse \n, \r, \t, etc. correctly in strings
-* parse comments
 * variable length argument lists to fn (the &)
 
 ###### Major
