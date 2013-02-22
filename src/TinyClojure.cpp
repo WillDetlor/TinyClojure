@@ -1586,6 +1586,8 @@ namespace tinyclojure {
             while (parseState.charactersLeft()) {
                 const char currentChar = parseState.currentChar();
                 ++parseState.position;
+                
+                std::cout << "'" << currentChar << "'" << std::endl;
 
                 if (escapeNextChar) {
                     char adjustedChar = currentChar;
@@ -1605,7 +1607,6 @@ namespace tinyclojure {
                     }
                     
                     stringbuf.append(&adjustedChar, 1);
-//#error check the string "hello \" how"
 
                     escapeNextChar = false;
                 } else {

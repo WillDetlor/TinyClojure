@@ -31,6 +31,7 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <set>
 #include <map>
 #include <cmath>
@@ -362,7 +363,33 @@ namespace tinyclojure {
     public:
         /// constructor for parser errors
         Error(ParserState &state, std::string errorMessage) : message(errorMessage), position(state.position) {
+            int fragLength = 10,
+                startFragment = state.position - fragLength,
+                endFragment = state.position + fragLength;
             
+            if (startFragment < 0) {
+                startFragment = 0;
+            }
+            
+            if (endFragment >= state.parserString.length()) {
+                endFragment = (int)state.parserString.length()-1;
+            }
+            
+            if (startFragment != endFragment) {
+                std::string trailing = state.parserString.substr(position, endFragment - position),
+                            leading = state.parserString.substr(startFragment, position - startFragment);
+                
+                std::stringstream stringBuilder;
+                
+                stringBuilder   << message
+                                << " ("
+                                << leading
+                                << " | "
+                                << trailing
+                                << ")";
+                
+                message = stringBuilder.str();
+            }
         }
         
         /// constructor for generic errors
