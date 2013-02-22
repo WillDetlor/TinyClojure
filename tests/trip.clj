@@ -1,10 +1,15 @@
 ; basic "trip tests" for TinyClojure
 ; tests are designed to evaluate to 0
 
+; define true to make verbose
+(def verboseassert false)
+
 ; an assert statement
 (defn assertzero [value label]
   (if (not= value 0)
-    (print "Failure: " label)))
+    (print "Failure: " label)
+    (if verboseassert
+      (print "Success: " label))))
 
 ; basic test that defs remain within a scope
 (def a 10)

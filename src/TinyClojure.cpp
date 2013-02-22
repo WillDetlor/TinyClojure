@@ -1869,6 +1869,10 @@ namespace tinyclojure {
                                 break;
                             }
                         }
+                        if (identifier.length() == numberBaseIndex) {
+                            // this can happen with a pure - sign
+                            isInteger = false;
+                        }
                         
                         bool    isFloat = true,
                                 pointFound = false;
