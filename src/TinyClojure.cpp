@@ -1587,8 +1587,6 @@ namespace tinyclojure {
                 const char currentChar = parseState.currentChar();
                 ++parseState.position;
                 
-                std::cout << "'" << currentChar << "'" << std::endl;
-
                 if (escapeNextChar) {
                     char adjustedChar = currentChar;
                     
@@ -1613,12 +1611,12 @@ namespace tinyclojure {
                     if (currentChar == '\\') {
                         escapeNextChar = true;
                     } else {
-                        if (currentChar=='"' && stringbuf.length()>1) {
+                        if (currentChar=='"' && stringbuf.length()) {
                             // TODO do something in the case of regexes
                             if (stringType == stringTypeRegex) {
                                 std::cerr << "Not dealing with regexes" << std::endl;
                             }
-                                                        
+                            
                             // end of the string
                             Object *element = new Object(stringbuf);
                             _gc->registerObject(element);
