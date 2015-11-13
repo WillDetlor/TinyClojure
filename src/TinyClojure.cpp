@@ -28,6 +28,8 @@
 
 #include "TinyClojure.h"
 #include <sstream>
+#include <cstdarg>
+#include <cstdio>
 
 namespace tinyclojure {
 
@@ -247,10 +249,10 @@ namespace tinyclojure {
     void ExtensionFunction::garbageCollector(GarbageCollector *gc) {
         _gc = gc;
     }
+
     void ExtensionFunction::evaluator(TinyClojure *evaluator) {
         _evaluator = evaluator;
     }
-    
     
     void ExtensionFunction::setIOProxy(IOProxy *ioProxy) {
         _ioProxy = ioProxy;
@@ -591,13 +593,300 @@ namespace tinyclojure {
                     std::string thisArgument = arguments[argumentIndex]->stringRepresentation();
                     
                     _ioProxy->writeOut(thisArgument);
-                    _ioProxy->writeOut("\n");
+
+                    // Only print out a space as long as this is not the last argument to print
+                    if (argumentIndex != (arguments.size()-1)) {
+                        _ioProxy->writeOut(" ");
+                    }
                 }
                 
                 return _gc->registerObject(new Object());
             }
         };
-        
+
+
+        class Println : public ExtensionFunction {
+            std::string functionName() {
+                return "println";
+            }
+
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterState) {
+                for (int argumentIndex=0; argumentIndex<arguments.size(); ++argumentIndex) {
+                    std::string thisArgument = arguments[argumentIndex]->stringRepresentation();
+
+                    _ioProxy->writeOut(thisArgument);
+
+                    // Only print out a space as long as this is not the last argument to print
+                    if (argumentIndex != (arguments.size()-1)) {
+                        _ioProxy->writeOut(" ");
+                    }
+                }
+
+                _ioProxy->writeOut("\n");
+
+                return _gc->registerObject(new Object());
+            }
+
+        };
+
+        class PrintStr : public ExtensionFunction {
+            std::string functionName() {
+                return "print-str";
+            }
+
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterState) {
+
+                std::string stringToPrint;
+
+                for (int argumentIndex=0; argumentIndex<arguments.size(); ++argumentIndex) {
+                    std::string thisArgument = arguments[argumentIndex]->stringRepresentation();
+
+                    stringToPrint.append(thisArgument);
+
+                    // Only add a space as long as this is not the last argument to append
+                    if (argumentIndex != (arguments.size()-1)) {
+                        stringToPrint.append(" ");
+                    }
+                }
+
+                return _gc->registerObject(new Object(stringToPrint));
+            }
+
+        };
+
+        class PrintlnStr : public ExtensionFunction {
+            std::string functionName() {
+                return "println-str";
+            }
+
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterState) {
+
+                std::string stringToPrint;
+
+                for (int argumentIndex=0; argumentIndex<arguments.size(); ++argumentIndex) {
+                    std::string thisArgument = arguments[argumentIndex]->stringRepresentation();
+
+                    stringToPrint.append(thisArgument);
+
+                    // Only add a space as long as this is not the last argument to append
+                    if (argumentIndex != (arguments.size()-1)) {
+                        stringToPrint.append(" ");
+                    }
+                }
+
+                stringToPrint.append("\n");
+
+                return _gc->registerObject(new Object(stringToPrint));
+            }
+
+        };
+
+        // Not implemented yet
+        class Printf : public ExtensionFunction {
+            std::string functionName() {
+                return "printf";
+            }
+
+            int minimumNumberOfArguments() {
+                return 1;
+            }
+
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterScope) {
+
+                if (arguments[0]->type() != Object::kObjectTypeString) {
+                    // The first argument must be a string
+                    std::stringstream stringBuilder;
+
+                    stringBuilder << "The first argument to " << functionName() << " must be a string.";
+
+                    throw Error(stringBuilder.str());
+                }
+
+                arguments.erase(arguments.begin());
+
+                return _gc->registerObject(new Object());
+            }
+        };
+
+        class Str : public ExtensionFunction {
+            std::string functionName() {
+                return "str";
+            }
+
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterScope) {
+
+                std::string result;
+
+                // no arguments or only nil argument, return empty string
+                if (arguments.size() == 0 || (arguments.size() == 1 && arguments[0]->type() == Object::kObjectTypeNil)) {
+                    result = "";
+                } else if (arguments.size() == 1) {
+                    // one argument return the string representation of the input
+                    result = arguments[0]->stringRepresentation();
+                } else {
+                    // more than one argument concatenate the strings and return them
+                    for (int argumentIndex = 0; argumentIndex<arguments.size(); ++argumentIndex) {
+                        result.append(arguments[argumentIndex]->stringRepresentation());
+                    }
+                }
+
+                return _gc->registerObject(new Object(result));
+            }
+
+        };
+
+        class Count : public ExtensionFunction {
+            std::string functionName() {
+                return "count";
+            }
+
+            int requiredNumberOfArguments() {
+                return 1;
+            }
+
+            bool validateArgumentTypes(std::vector<Object::ObjectType>& typeArray) {
+
+                if (typeArray[0] == Object::kObjectTypeNil || typeArray[0] == Object::kObjectTypeString || typeArray[0] == Object::kObjectTypeVector) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterScope) {
+
+                int result;
+
+                switch (arguments[0]->type()) {
+                    case Object::kObjectTypeNil:
+                        result = 0;
+                        break;
+                    case Object::kObjectTypeString:
+                        result = arguments[0]->stringRepresentation().length();
+                        break;
+                    case Object::kObjectTypeVector:
+                        result = arguments[0]->vectorValue().size();
+                        break;
+                    default:
+                        break;
+                }
+
+                return _gc->registerObject(new Object(result));
+
+            }
+        };
+
+        class Compare : public ExtensionFunction {
+            std::string functionName() {
+                return "compare";
+            }
+
+            int requiredNumberOfArguments() {
+                return 2;
+            }
+
+            bool validateArgumentTypes(std::vector<Object::ObjectType>& typeArray) {
+
+                if (typeArray[0] == Object::kObjectTypeNil || typeArray[0] == Object::kObjectTypeString || typeArray[0] == Object::kObjectTypeVector) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterScope) {
+
+                if ((arguments[0]->type() == Object::kObjectTypeString && arguments[1]->type() == Object::kObjectTypeVector) || (arguments[0]->type() == Object::kObjectTypeVector && arguments[1]->type() == Object::kObjectTypeString)) {
+                    std::stringstream stringbuilder;
+
+                    stringbuilder << "You may not compare a string and a vector";
+
+                    throw Error(stringbuilder.str());
+                }
+
+                int result;
+
+
+                if (arguments[0]->type() == Object::kObjectTypeNil) {
+                    // If the first is nil
+
+                    if (arguments[1]->type() == Object::kObjectTypeNil) {
+                        // and the second we know they are the same
+                        result = 0;
+                    } else {
+                        // If not nil then it is automatically lower than the rhs
+                        result = -1;
+                    }
+
+                } else if (arguments[1]->type() == Object::kObjectTypeNil) {
+
+                    // Lhs is automatically greater than rhs as lhs is not nil and rhs is nil
+                    result = 1;
+
+                } else {
+
+                    if (arguments[0]->type() == Object::kObjectTypeString || arguments[0]->type() == Object::kObjectTypeString) {
+                        // Handle comparing strings
+                        result = arguments[0]->stringRepresentation().compare(arguments[1]->stringRepresentation());
+
+                    } else {
+                        result = arguments[0]->vectorValue().size() - arguments[1]->vectorValue().size();
+                    }
+                }
+
+                return _gc->registerObject(new Object(result));
+            }
+
+        };
+
+        class Subs : public ExtensionFunction {
+            std::string functionName() {
+                return "subs";
+            }
+
+            int minimumNumberOfArguments() {
+                return 2;
+            }
+
+            int maximumNumberOfArguments() {
+                return 3;
+            }
+
+            bool validateArgumentTypes(std::vector<Object::ObjectType>& typeArray) {
+
+                if (typeArray[0] == Object::kObjectTypeString && typeArray[1] == Object::kObjectTypeNumber) {
+
+                    if (typeArray.size() == 3) {
+                        if (typeArray[2] == Object::kObjectTypeNumber) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        return true;
+                    }
+                } else {
+                    return false;
+                }
+            }
+
+            Object *execute(ObjectList arguments, InterpreterScope *interpreterScope) {
+
+                std::string result;
+
+                if (arguments.size() == 3) {
+                    result = arguments[0]->stringRepresentation().substr(arguments[1]->numberValue().integerValue(), (arguments[2]->numberValue().integerValue()-arguments[1]->numberValue().integerValue()));
+                } else {
+                    result = arguments[0]->stringRepresentation().substr(arguments[1]->numberValue().integerValue(), std::string::npos);
+                }
+
+                return _gc->registerObject(new Object(result));
+            }
+
+        };
+
+        class 
+
         class Def : public ExtensionFunction {
             std::string functionName() {
                 return "def";
@@ -1275,7 +1564,7 @@ namespace tinyclojure {
                 break;
                 
             case kObjectTypeString:
-                stringBuilder << '"' << *_contents.stringValue << '"';
+                stringBuilder << *_contents.stringValue;
                 break;
                 
             case kObjectTypeNumber:
@@ -1331,10 +1620,10 @@ namespace tinyclojure {
                 stringBuilder << *_contents.stringValue;
                 break;
         }
-        
+
         return stringBuilder.str();
     }
-    
+
     bool Object::isIterable() {
         if (_type == kObjectTypeVector) {
             return false;
@@ -1490,6 +1779,14 @@ namespace tinyclojure {
         internalAddExtensionFunction(new core::GreaterThan);
         internalAddExtensionFunction(new core::GreaterThanOrEqual);
         internalAddExtensionFunction(new core::Print());
+        internalAddExtensionFunction(new core::Println());
+        internalAddExtensionFunction(new core::PrintStr());
+        internalAddExtensionFunction(new core::PrintlnStr());
+        //internalAddExtensionFunction(new core::Printf());
+        internalAddExtensionFunction(new core::Str());
+        internalAddExtensionFunction(new core::Count());
+        internalAddExtensionFunction(new core::Compare());
+        internalAddExtensionFunction(new core::Subs());
         internalAddExtensionFunction(new core::Def);
         internalAddExtensionFunction(new core::Do);
         internalAddExtensionFunction(new core::Vector);
@@ -2154,13 +2451,24 @@ namespace tinyclojure {
         
         return 0;
     }
+
 #pragma mark -
 #pragma mark IOProxy
     
     void IOProxy::writeOut(std::string stringout) {
         std::cout << stringout;
     }
-    
+
+    void IOProxy::writeOutFormat(std::string stringToFormat, va_list args) {
+
+        // Convert from string to char array
+        char * cstr = new char [stringToFormat.length() + 1];
+        std::strcpy(cstr, stringToFormat.c_str());
+
+        // Print the list of arguments to standard output
+        vprintf(cstr, args);
+    }
+
     void IOProxy::writeErr(std::string stringout) {
         std::cerr << stringout;
     }

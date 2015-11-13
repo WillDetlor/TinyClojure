@@ -36,6 +36,8 @@
 #include <map>
 #include <cmath>
 #include <vector>
+#include <cstdarg>
+#include <cstdio>
 
 namespace tinyclojure {
     /**
@@ -80,26 +82,6 @@ namespace tinyclojure {
             double floating;
         } _value;
         NumberMode _mode;
-    };
-    
-    /**
-     * A class/interface for the interpreters IO
-     *
-     * Subclassing this allows you to fully customise the IO
-     */
-    class IOProxy {
-    public:
-        /// write a string to the stdout
-        void writeOut(std::string stringout);
-        
-        /// write a string to the stderr
-        void writeErr(std::string stringout);
-        
-        /// read a line from the stdin
-        std::string readLine();
-        
-    protected:
-        
     };
 
     /// a forward declaration to allow for an ExtensionFunction pointer in Object
@@ -206,7 +188,7 @@ namespace tinyclojure {
         
         /// build a string representation of the object
         std::string stringRepresentation(bool expandList=true);
-        
+
         /// is this object iterable
         bool isIterable();
         
@@ -236,7 +218,30 @@ namespace tinyclojure {
             bool booleanValue;
         } _contents;
     };
-    
+
+    /**
+     * A class/interface for the interpreters IO
+     *
+     * Subclassing this allows you to fully customise the IO
+     */
+    class IOProxy {
+    public:
+        /// write a string to the stdout
+        void writeOut(std::string stringout);
+
+        // writes formatted output to stdout
+        void writeOutFormat(std::string stringToFormat, va_list args);
+
+        /// write a string to the stderr
+        void writeErr(std::string stringout);
+
+        /// read a line from the stdin
+        std::string readLine();
+
+    protected:
+
+    };
+
     /**
      * a very simple garbage collector for TinyClojure objects
      *
