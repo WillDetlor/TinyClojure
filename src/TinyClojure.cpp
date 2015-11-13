@@ -885,8 +885,6 @@ namespace tinyclojure {
 
         };
 
-        class 
-
         class Def : public ExtensionFunction {
             std::string functionName() {
                 return "def";

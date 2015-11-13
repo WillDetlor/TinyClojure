@@ -13,7 +13,6 @@
   <component name="ChangeListManager">
     <list default="true" id="7cee4800-b6e0-4360-9f09-fe8883326c3b" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/TinyClojure.cpp" afterPath="$PROJECT_DIR$/src/TinyClojure.cpp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/TinyClojure.h" afterPath="$PROJECT_DIR$/src/TinyClojure.h" />
     </list>
     <ignored path="TinyClojure.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -47,8 +46,8 @@
       <file leaf-file-name="TinyClojure.cpp" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/TinyClojure.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="15.311943">
-              <caret line="887" column="14" selection-start-line="887" selection-start-column="14" selection-end-line="887" selection-end-column="14" />
+            <state vertical-scroll-proportion="0.5258467">
+              <caret line="885" column="10" selection-start-line="885" selection-start-column="10" selection-end-line="885" selection-end-column="10" />
               <folding>
                 <element signature="e#1230#1254#0" expanded="true" />
               </folding>
@@ -250,8 +249,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/TinyClojure.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="15.311943">
-          <caret line="887" column="14" selection-start-line="887" selection-start-column="14" selection-end-line="887" selection-end-column="14" />
+        <state vertical-scroll-proportion="0.5258467">
+          <caret line="885" column="10" selection-start-line="885" selection-start-column="10" selection-end-line="885" selection-end-column="10" />
           <folding>
             <element signature="e#1230#1254#0" expanded="true" />
           </folding>
