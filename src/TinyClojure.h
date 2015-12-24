@@ -53,6 +53,7 @@ namespace tinyclojure {
         Number(double val);
         Number(int val);
         Number();
+        Number(Number* oldNum);
         double floatingValue() const;
         Number floatingVersion() const;
         int integerValue() const;
@@ -61,6 +62,9 @@ namespace tinyclojure {
         Number operator*(const Number& rhs) const;
         Number operator/(const Number& rhs) const;
         Number operator-(const Number& rhs) const;
+        Number::NumberMode getMode() const;
+        void roundUp();
+        void roundDown();
         
         bool operator==(const Number& rhs) const;
         bool operator!=(const Number& rhs) const;
@@ -87,6 +91,7 @@ namespace tinyclojure {
     /// a forward declaration to allow for an ExtensionFunction pointer in Object
     class ExtensionFunction;
     class TinyClojure;
+    class GarbageCollector;
     
     /// define the repeatedly used object list with a forward declaration
     class Object;
@@ -135,10 +140,16 @@ namespace tinyclojure {
         
         /// construct a function
         Object(Object *code, ObjectList arguments);
+
+        /// construct a macro
+        Object(Object *code, ObjectList arguments, bool macro);
         
         /// construct an extension function
         Object(ExtensionFunction *function);
-        
+
+        // copy constructor (deep copy)
+        Object(Object* oldObj, GarbageCollector* gc);
+
         ~Object();
         
         /// this object's type
@@ -151,7 +162,7 @@ namespace tinyclojure {
         bool operator==(const Object& rhs);
         
         /// return a reference to this object as a string value
-        std::string stringValue();
+        std::string stringValue(bool expandList=true);
         
         /// return a reference to this object as a vector
         ObjectList vectorValue();
@@ -164,6 +175,9 @@ namespace tinyclojure {
         
         /// accessor for parameter list part of function value
         ObjectList functionValueParameters();
+
+        /// function to check if is a macro
+        bool isMacro();
         
         /// accessor for car
         Object* consValueLeft();
@@ -205,6 +219,7 @@ namespace tinyclojure {
             struct {
                 Object *objectPointer;
                 ObjectList* argumentSymbols;
+                bool macro;
             } functionValue;
             
             struct {
@@ -228,9 +243,6 @@ namespace tinyclojure {
     public:
         /// write a string to the stdout
         void writeOut(std::string stringout);
-
-        // writes formatted output to stdout
-        void writeOutFormat(std::string stringToFormat, va_list args);
 
         /// write a string to the stderr
         void writeErr(std::string stringout);
@@ -259,7 +271,10 @@ namespace tinyclojure {
          * register an object with the garbage collector
          */
         Object* registerObject(Object* object);
-        
+
+        // Deletes an object from the garbage collector
+        // Returns true/false based on success of operation
+        void deleteObject(Object* object);
         
         /**
          * increment the "root object" reference count for this Object
@@ -355,7 +370,15 @@ namespace tinyclojure {
                 
         /// look for a symbol (in this and all parent scopes), return NULL if not found
         Object *lookupSymbol(std::string symbolName);
-        
+
+        // Removes the symbol from scope, used for undefining symbols and garbage collection
+        // Returns return object of symbol removed
+        Object* removeSymbolInScope(std::string symbolName);
+
+        // Removes symbol from current scope, if not found there then in its parent (recursive until symbol is determined to be found or not found)
+        // Returns return object of symbol removed
+        Object* removeSymbol(std::string);
+
     protected:
         InterpreterScope *_parentScope;
         std::map<std::string, Object*> _symbolTable;
@@ -416,12 +439,12 @@ namespace tinyclojure {
      */
     class ExportedObject {
     public:
-        ExportedObject(GarbageCollector *gc, Object* ptr) : _gc(gc), _object(ptr) {
-            _gc->retainRootObject(_object);
+        ExportedObject(GarbageCollector *gc, Object* ptr) : _gc_long(gc), _object(ptr) {
+            _gc_long->retainRootObject(_object);
         }
         
         ~ExportedObject() {
-            _gc->releaseRootObject(_object);
+            _gc_long->releaseRootObject(_object);
         }
         
         Object& operator* () {
@@ -433,7 +456,8 @@ namespace tinyclojure {
         }
         
     protected:
-        GarbageCollector *_gc;
+        GarbageCollector *_gc_short;
+        GarbageCollector *_gc_long;
         Object *_object;
     };
         
@@ -453,7 +477,7 @@ namespace tinyclojure {
         }
         
         
-        void garbageCollector(GarbageCollector *gc);
+        void garbageCollector(GarbageCollector *gc_long, GarbageCollector *gc_short);
         void setIOProxy(IOProxy *ioProxy);
         void evaluator(TinyClojure *evaluator);
         
@@ -461,7 +485,7 @@ namespace tinyclojure {
          * validate the argument types
          *
          */
-        bool validateArgumentTypes(std::vector<Object::ObjectType>& typeArray);
+        virtual bool validateArgumentTypes(std::vector<Object::ObjectType>& typeArray);
         
         /**
          * required number of arguments to this function
@@ -511,7 +535,8 @@ namespace tinyclojure {
          */
         std::vector<Object::ObjectType> _typeArray;
         
-        GarbageCollector *_gc;
+        GarbageCollector *_gc_long;
+        GarbageCollector *_gc_short;
         TinyClojure *_evaluator;
         IOProxy *_ioProxy;
     };
@@ -566,6 +591,8 @@ namespace tinyclojure {
         
         /// add an extension function and reset the interpreter so that it is loaded
         void addExtensionFunction(ExtensionFunction *function);
+
+        void CollectGarbage();
         
     protected:
         /// add an extension function to the function table
@@ -578,7 +605,11 @@ namespace tinyclojure {
         InterpreterScope *_baseScope;
         
         /// the shared garbage collector
-        GarbageCollector *_gc;
+        // Long term and short term garbage collectors
+        // One for symbols, defined functions that need to be saved for the life of the program
+        // Other for objects that can be deleted at various points
+        GarbageCollector *_gc_long;
+        GarbageCollector *_gc_short;
         
         /// the internal recursive parser function, see parse for documentation
         Object* recursiveParse(ParserState& parseState);
