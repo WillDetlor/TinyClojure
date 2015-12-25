@@ -4,6 +4,8 @@
 ; define true to make verbose
 (def verboseassert false)
 
+(println "Working!")
+
 ; an assert statement
 (defn assertzero [value label]
   (if (not= value 0)

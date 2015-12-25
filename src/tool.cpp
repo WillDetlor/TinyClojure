@@ -49,6 +49,7 @@ void repl() {
                 if (code->type() != tinyclojure::Object::kObjectTypeNil) {
                     tinyclojure::Object *result = interpreter.eval(code);
                     std::cout << result->stringRepresentation() << std::endl;
+                    interpreter.CollectGarbage();
                 }
             }
         } catch (tinyclojure::Error error) {
